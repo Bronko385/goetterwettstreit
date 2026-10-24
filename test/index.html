@@ -103,7 +103,7 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .rank .mini { height: 7px; border-radius: 4px; background: #0b0d12; overflow: hidden; }
 .rank .mini i { display: block; height: 100%; border-radius: 4px; }
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
-.lobby { position: fixed; inset: 0; z-index: 20; overscroll-behavior: contain; touch-action: pan-y; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px)); background: radial-gradient(ellipse at 50% 40%, rgba(10, 12, 20, 0.35), rgba(10, 12, 20, 0.82)); overflow-y: auto; }
+.lobby { position: fixed; inset: 0; z-index: 20; overscroll-behavior: contain; touch-action: pan-y; overflow-x: hidden; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px)); background: radial-gradient(ellipse at 50% 40%, rgba(10, 12, 20, 0.35), rgba(10, 12, 20, 0.82)); overflow-y: auto; }
 .lcard { width: 100%; max-width: 400px; background: linear-gradient(#262b38, #14171f); border: 1px solid var(--edge); border-radius: 22px; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
 .lcard h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 26px; color: var(--gold); text-align: center; letter-spacing: 0.03em; }
 .lcard .sub { margin: -4px 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); }
@@ -121,6 +121,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .lcard .alt input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: 0.15em; }
 .lcard .err { margin: 0; min-height: 1em; color: #ffab9e; font-size: 13px; font-weight: 800; text-align: center; }
 .mytitle { font-size: 12.5px; font-weight: 800; color: var(--muted); border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; }
+button, input { touch-action: manipulation; }
+.build { margin: 0; text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); opacity: 0.7; }
 .linkish { appearance: none; border: 0; background: none; color: var(--muted); font: 800 12.5px var(--body); text-decoration: underline; cursor: pointer; padding: 6px; align-self: center; }
 .chron { display: flex; flex-direction: column; gap: 6px; max-height: 38vh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
 .chron div { display: flex; gap: 8px; align-items: baseline; font-size: 13px; font-weight: 700; line-height: 1.35; }
@@ -178,6 +180,7 @@ h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: v
     <button class="linkish" id="lobby-new" type="button" hidden>Stattdessen neues Spiel erstellen</button>
     <div class="gods" id="lobby-games" hidden></div>
     <button class="linkish" id="lobby-back" type="button" hidden>Zurück zum Spiel</button>
+    <p class="build" id="lobby-build"></p>
   </div>
 </div>
 
@@ -185,11 +188,21 @@ h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: v
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script id="sbjs" async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script>
+// iOS Safari ignoriert maximum-scale beim Zwei-Finger-Zoom. Die Seite selbst soll nie zoomen oder wandern;
+// nur die Insel (eigene Gesten) und die Spielauswahl/Chronik (senkrecht scrollen) reagieren auf Wischen.
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => {
+  if (e.target.id === 'scene') return;
+  if (e.touches.length > 1 || !e.target.closest('.lobby, .chron')) e.preventDefault();
+}, { passive: false });
+</script>
+<script>
 (function () {
   if (!window.THREE || !THREE.OrbitControls) { document.getElementById('fallback').hidden = false; return; }
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
+  const BUILD = 'Version 0.2 · Stand 5';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -864,7 +877,7 @@ h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: v
       list.map((k, i) => '<div class="rank"><span class="pos">' + (i + 1) + '</span><div class="who"><span>' + (k === ME ? 'Du' : esc(PLAYERS[k])) + ' · ' + GOD_LONG[k] + '</span><div class="mini"><i style="width:' + (tot[k] / max * 100) + '%;background:' + CSSC[k] + '"></i></div></div><span style="font-variant-numeric:tabular-nums">' + tot[k] + '</span></div>').join('') +
       (free ? '<div class="invite"><span>Spielcode <b>' + esc(game.code) + '</b><br>' + free + (free === 1 ? ' Gott ist' : ' Götter sind') + ' noch frei</span><button class="gold-btn" id="invite-btn">Einladen</button></div>' : '') +
       '<h3 class="sec">Chronik</h3>' + chronicle(game.events.slice(-15).reverse()) +
-      '<button class="linkish" id="new-game">Spiel wechseln, erstellen oder beitreten</button>');
+      '<button class="linkish" id="new-game">Spiel wechseln, erstellen oder beitreten</button><p class="build">' + BUILD + '</p>');
     const ib = document.getElementById('invite-btn'); if (ib) ib.addEventListener('click', invite);
     document.getElementById('new-game').addEventListener('click', () => { closeSheet(); showLobby('create'); });
   }
@@ -1094,6 +1107,7 @@ h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: v
   lb('lobby-new').addEventListener('click', () => showLobby('create'));
   lb('lobby-back').addEventListener('click', () => { lobby.el.hidden = true; dock.hidden = false; });
   try { lb('lobby-name').value = localStorage.getItem('gw-name') || ''; } catch (e) {}
+  lb('lobby-build').textContent = BUILD;
 
   (async function boot() {
     let code = null; try { code = (new URLSearchParams(location.search).get('spiel') || '').toUpperCase() || null; } catch (e) {}
