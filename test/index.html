@@ -1,0 +1,1087 @@
+<title>Götterwettstreit 0.2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* Layout: full-bleed golden-hour island; HUD kept to two corners and one dock, everything else appears only on tap. Single warm look by choice. */
+:root {
+  --ink: #12151d;
+  --panel: rgba(18, 21, 29, 0.9);
+  --panel-2: #1e2230;
+  --edge: rgba(214, 166, 72, 0.7);
+  --gold: #f2b632;
+  --cream: #f6efe2;
+  --muted: #b7bccb;
+  --teal: #34c46a;
+  --pink: #e2475a;
+  --danger: #ff6b5a;
+  --good: #8fe3a6;
+  --display: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body { background: #0f1a33; color: var(--cream); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.lbl { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(14, 16, 22, 0.78); color: var(--cream); display: flex; align-items: center; gap: 5px; will-change: transform; }
+.lbl i { width: 7px; height: 7px; border-radius: 50%; }
+.lbl.god { font-family: var(--display); font-size: 11.5px; letter-spacing: 0.04em; background: rgba(14, 16, 22, 0.6); }
+.float { position: absolute; left: 0; top: 0; font-family: var(--display); font-weight: 900; font-size: 17px; color: var(--gold); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); white-space: nowrap; will-change: transform, opacity; }
+.float small { display: block; font-size: 11px; color: var(--cream); text-align: center; text-shadow: 0 1px 0 #000; }
+
+.hud { position: fixed; top: 0; left: 0; right: 0; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); padding-block: calc(env(safe-area-inset-top, 0px) + 12px) 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+.god { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--edge); border-radius: 999px; padding: 5px 14px 5px 5px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); }
+.medal { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 40% 35%, #c9a04a, #7a5a1e 70%); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35), 0 0 10px rgba(242, 182, 50, 0.35); flex-shrink: 0; }
+.god .nm { font-family: var(--display); font-weight: 900; font-size: 14px; line-height: 1.1; }
+.faith { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.faith .bar { width: 96px; height: 8px; border-radius: 4px; background: #0b0d12; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5); }
+.faith .bar i { display: block; height: 100%; width: 64%; background: linear-gradient(90deg, #e9a43a, #ffe08a); border-radius: 4px; transition: width 0.4s ease; }
+.faith span { font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; min-width: 26px; }
+.right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.res { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--edge); border-radius: 999px; padding: 5px 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); }
+.res span { display: flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; padding: 0 3px; }
+.mute { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); background: var(--panel); color: var(--cream); display: grid; place-items: center; cursor: pointer; }
+
+.pill-btn { appearance: none; border: 0; min-height: 36px; padding: 0 14px; border-radius: 999px; font: 900 12.5px var(--body); cursor: pointer; background: linear-gradient(#a6f0bd, #6fcf8e); color: #0e2a18; box-shadow: 0 3px 0 #2f7a48; }
+.pill-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2f7a48; }
+.pill-btn:disabled { background: #3a3f4c; color: #9aa0ae; box-shadow: none; cursor: not-allowed; }
+
+.toasts { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 116px); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); }
+.toast { background: var(--panel); border: 1px solid var(--edge); border-radius: 14px; padding: 8px 14px; font-size: 13px; font-weight: 800; max-width: 340px; text-align: center; animation: tin 0.25s ease-out; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
+.toast.big { font-family: var(--display); font-size: 15px; border-color: var(--gold); color: var(--gold); }
+@keyframes tin { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.radial { position: fixed; left: 0; top: 0; width: 0; height: 0; pointer-events: none; }
+.rbtn { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; appearance: none; width: 62px; height: 62px; border-radius: 50%; border: 2px solid var(--gold); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; color: var(--cream); font: 900 10px var(--body); background: radial-gradient(circle at 35% 30%, #4a5164, #1a1e28 72%); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1); animation: pop 0.2s cubic-bezier(.2, .8, .3, 1) both; }
+.rbtn svg { width: 24px; height: 24px; }
+.rbtn em { font-style: normal; color: var(--gold); font-size: 9.5px; }
+.rbtn:disabled { filter: grayscale(0.8) brightness(0.7); cursor: not-allowed; }
+.rbtn:active { transform: translate(-50%, -46%); }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+
+.dock { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 22px; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); padding-block: 0 calc(env(safe-area-inset-bottom, 0px) + 16px); pointer-events: none; }
+.orb { pointer-events: auto; appearance: none; border: 0; background: transparent; color: var(--cream); display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; font: 900 12px var(--body); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.orb span.ring { width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--gold); background: radial-gradient(circle at 35% 30%, #4a5164, #171a23 72%); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+.orb:active span.ring { transform: translateY(3px); box-shadow: 0 2px 0 #07080b, 0 0 0 5px rgba(243, 194, 90, 0.16); }
+.orb svg { width: 28px; height: 28px; }
+
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); padding-block: 0 calc(env(safe-area-inset-bottom, 0px) + 14px); pointer-events: none; z-index: 5; }
+.card { pointer-events: auto; max-width: 520px; margin: 0 auto; background: linear-gradient(#262b38, #14171f); border: 1px solid var(--edge); border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08); animation: up 0.22s ease-out; max-height: 62vh; overflow-y: auto; }
+@keyframes up { from { transform: translateY(24px); opacity: 0.3; } to { transform: none; opacity: 1; } }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.card-head h2 { margin: 0; font-family: var(--display); font-size: 20px; font-weight: 900; color: var(--cream); text-wrap: balance; }
+.card-head p { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.x { appearance: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); background: transparent; color: var(--cream); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+.split { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: #0b0d12; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5); }
+.split i { display: block; height: 100%; transition: width 0.5s ease; }
+.legend { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.row { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 10px; }
+.row .ill { width: 64px; height: 64px; border-radius: 14px; background: radial-gradient(circle at 50% 40%, #3e4558, #14171f); display: grid; place-items: center; flex-shrink: 0; }
+.row .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.row .t { font-family: var(--display); font-weight: 900; font-size: 14.5px; }
+.row .d { font-size: 12px; color: var(--muted); font-weight: 700; line-height: 1.35; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.chip { font-size: 11.5px; font-weight: 900; padding: 2px 8px; border-radius: 8px; background: rgba(143, 227, 166, 0.14); color: var(--good); }
+.chip.miss { background: rgba(255, 107, 90, 0.14); color: #ffab9e; }
+.gold-btn { appearance: none; border: 0; min-height: 44px; padding: 0 16px; border-radius: 13px; font: 900 13.5px var(--body); cursor: pointer; color: #3a2408; background: linear-gradient(#ffe08a, #e9a43a); box-shadow: 0 4px 0 #8a5a14; flex-shrink: 0; }
+.gold-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a5a14; }
+.gold-btn:disabled { background: #3a3f4c; color: #9aa0ae; box-shadow: none; cursor: not-allowed; }
+.rank { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 13.5px; }
+.rank .pos { font-family: var(--display); font-size: 18px; width: 22px; color: var(--gold); }
+.rank .who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.rank .mini { height: 7px; border-radius: 4px; background: #0b0d12; overflow: hidden; }
+.rank .mini i { display: block; height: 100%; border-radius: 4px; }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.lobby { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px)); background: radial-gradient(ellipse at 50% 40%, rgba(10, 12, 20, 0.35), rgba(10, 12, 20, 0.82)); overflow-y: auto; }
+.lcard { width: 100%; max-width: 400px; background: linear-gradient(#262b38, #14171f); border: 1px solid var(--edge); border-radius: 22px; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
+.lcard h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 26px; color: var(--gold); text-align: center; letter-spacing: 0.03em; }
+.lcard .sub { margin: -4px 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); }
+.lcard label { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 800; color: var(--muted); }
+.lcard input { appearance: none; border: 1px solid rgba(243, 194, 90, 0.45); background: #0f1219; color: var(--cream); border-radius: 12px; min-height: 46px; padding: 0 12px; font: 800 16px var(--body); }
+.lcard input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.gods { display: flex; flex-direction: column; gap: 8px; }
+.gpick { appearance: none; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); color: var(--cream); font: 800 14px var(--body); text-align: left; cursor: pointer; }
+.gpick i { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.gpick small { margin-left: auto; color: var(--muted); font-size: 12px; }
+.gpick[aria-pressed="true"] { border-color: var(--gold); background: rgba(243, 194, 90, 0.12); }
+.gpick:disabled { opacity: 0.45; cursor: not-allowed; }
+.lcard .alt { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; font-weight: 800; color: var(--muted); border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; }
+.lcard .alt span { flex-basis: 100%; }
+.lcard .alt input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: 0.15em; }
+.lcard .err { margin: 0; min-height: 1em; color: #ffab9e; font-size: 13px; font-weight: 800; text-align: center; }
+.linkish { appearance: none; border: 0; background: none; color: var(--muted); font: 800 12.5px var(--body); text-decoration: underline; cursor: pointer; padding: 6px; align-self: center; }
+.chron { display: flex; flex-direction: column; gap: 6px; max-height: 38vh; overflow-y: auto; }
+.chron div { display: flex; gap: 8px; align-items: baseline; font-size: 13px; font-weight: 700; line-height: 1.35; }
+.chron i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; transform: translateY(-1px); }
+.chron time { margin-left: auto; color: var(--muted); font-size: 11.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.invite { display: flex; align-items: center; gap: 10px; background: rgba(255, 243, 220, 0.06); border: 1px dashed rgba(243, 194, 90, 0.45); border-radius: 12px; padding: 8px 10px; font-size: 13px; font-weight: 800; }
+.invite b { font-family: var(--display); color: var(--gold); letter-spacing: 0.12em; font-size: 16px; }
+.invite .gold-btn { margin-left: auto; min-height: 38px; }
+h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: var(--cream); }
+.fallback { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-size: 14px; color: var(--cream); background: #0f1a33; }
+@media (max-width: 380px) { .faith .bar { width: 70px; } .god .nm { font-size: 13px; } }
+@media (prefers-reduced-motion: reduce) { .rbtn, .card, .toast { animation: none; } }
+</style>
+
+<canvas id="scene" tabindex="0" aria-label="3D-Insel. Ziehen zum Drehen, zwei Finger oder Mausrad zum Zoomen, ein Dorf antippen, um ein Wunder zu wirken."></canvas>
+<div class="labels" id="labels" aria-hidden="true"></div>
+<div class="fallback" id="fallback" hidden>Die 3D-Ansicht konnte nicht geladen werden. Bitte die Seite neu laden.</div>
+
+<div class="hud">
+  <div class="god">
+    <div class="medal" id="medal" aria-hidden="true"></div>
+    <div>
+      <div class="nm" id="god-name">&nbsp;</div>
+      <div class="faith" aria-label="Glaube"><div class="bar"><i id="faith-bar"></i></div><span id="faith-num">0</span></div>
+    </div>
+  </div>
+  <div class="right">
+    <div style="display:flex;gap:6px">
+    <button class="mute" id="look" aria-label="Stimmung wechseln"><svg id="look-storm" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 15 a4.5 4.5 0 0 1 .5-9 a5.5 5.5 0 0 1 10.3 2 A3.8 3.8 0 0 1 17.5 15"/><path d="M12.5 12 L10 16.5 H13 L11 21" stroke="#f2b632"/></svg><svg id="look-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2b632" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="display:none"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5 V5 M12 19 V21.5 M2.5 12 H5 M19 12 H21.5 M5.3 5.3 L7 7 M17 17 L18.7 18.7 M5.3 18.7 L7 17 M17 7 L18.7 5.3"/></svg></button>
+    <button class="mute" id="mute" aria-label="Ton ausschalten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 9 H8 L13 5 V19 L8 15 H4 Z"/><path id="mute-wave" d="M16 9 C17.5 10.5 17.5 13.5 16 15 M19 6.5 C22 9.5 22 14.5 19 17.5" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="radial" id="radial"></div>
+
+<div class="dock" id="dock">
+  <button class="orb" id="dock-wunder"><span class="ring"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 L5 14 H11 L9 22 L19 9 H13 Z" fill="#f3c25a"/></svg></span>Wunder</button>
+  <button class="orb" id="dock-bauen"><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="#fff3dc" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 20 H21 M5 20 V10 L12 5 L19 10 V20 M9.5 20 V14 H14.5 V20"/></svg></span>Bauen</button>
+  <button class="orb" id="dock-goetter"><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="#fff3dc" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 20 V13 M12 20 V6 M18 20 V10"/></svg></span>Götter</button>
+</div>
+<div class="sheet" id="sheet" hidden><div class="card" id="card" role="dialog" aria-labelledby="card-title"></div></div>
+<div class="lobby" id="lobby" hidden>
+  <div class="lcard" id="lobby-form">
+    <h1>Götterwettstreit</h1>
+    <p class="sub" id="lobby-sub"></p>
+    <label>Dein Name<input id="lobby-name" maxlength="20" autocomplete="nickname" required></label>
+    <div class="gods" id="lobby-gods" role="group" aria-label="Gott wählen"></div>
+    <button class="gold-btn" id="lobby-go" type="button"></button>
+    <p class="err" id="lobby-err" role="alert"></p>
+    <div class="alt" id="lobby-alt"><span>Einen Code bekommen? Hier beitreten:</span><input id="lobby-code" placeholder="Code" maxlength="5" autocapitalize="characters"><button class="pill-btn" id="lobby-codebtn" type="button">Weiter</button></div>
+    <button class="linkish" id="lobby-new" type="button" hidden>Stattdessen neues Spiel erstellen</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script id="sbjs" async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  if (!window.THREE || !THREE.OrbitControls) { document.getElementById('fallback').hidden = false; return; }
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
+  const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
+  const GODS = ['gold', 'teal', 'pink'];
+  const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
+  const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
+  let ME = null; const PLAYERS = {};
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const who = k => k === ME ? 'Du' : esc(PLAYERS[k] || GOD[k]);
+  const plain = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
+  const whom = k => k === 'neutral' ? 'niemanden' : k === ME ? 'dich' : esc(PLAYERS[k] || '') + ' (' + GOD[k] + ')';
+
+  // ---------- random & noise ----------
+  let seed = 20261024;
+  function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+  function hash(x, y) { const h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+  function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi; const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+  function fbm(x, y) { return vnoise(x, y) * .55 + vnoise(x * 2.1, y * 2.1) * .3 + vnoise(x * 4.3, y * 4.3) * .15; }
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+  // ---------- renderer ----------
+  const canvas = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xeaa895, 70, 190);
+  const camera = new THREE.PerspectiveCamera(40, 1, .1, 700);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = false;
+  controls.minDistance = 11; controls.maxDistance = 48; controls.maxPolarAngle = Math.PI * .58; controls.minPolarAngle = Math.PI * .14;
+  controls.target.set(0, 1, 0); controls.autoRotate = !reduce; controls.autoRotateSpeed = .35;
+  let idle;
+  controls.addEventListener('start', () => { controls.autoRotate = false; clearTimeout(idle); });
+  controls.addEventListener('end', () => { clearTimeout(idle); if (!reduce) idle = setTimeout(() => { if (!selected) controls.autoRotate = true; }, 9000); });
+
+  // ---------- sky, sun, light ----------
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.ShaderMaterial({
+    uniforms: { top: { value: new THREE.Color('#0f1a33') }, mid: { value: new THREE.Color('#e07a3a') }, bot: { value: new THREE.Color('#1c2233') }, spread: { value: 3.5 }, flash: { value: 0 } },
+    vertexShader: 'varying vec3 vP; void main(){ vP = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vP,1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform float spread; uniform float flash; varying vec3 vP; void main(){ float h = normalize(vP).y; vec3 c = h > 0.0 ? mix(mid, top, pow(clamp(h*spread,0.0,1.0), 0.6)) : mix(mid, bot, clamp(-h*spread*1.3,0.0,1.0)); c += vec3(0.55,0.6,0.75) * flash * smoothstep(-0.1, 0.6, h); gl_FragColor = vec4(c,1.0); }',
+    side: THREE.BackSide, depthWrite: false, fog: false
+  }));
+  sky.renderOrder = -1; scene.add(sky);
+  function radialTex(inner, outer) {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+    const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, inner); g.addColorStop(1, outer); x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  }
+  const glowTex = radialTex('rgba(255,255,255,1)', 'rgba(255,255,255,0)');
+  const sunDir = new THREE.Vector3(-0.75, 0.32, -0.58).normalize();
+  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffd59a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  sunSprite.position.copy(sunDir).multiplyScalar(330); sunSprite.scale.set(140, 140, 1); scene.add(sunSprite);
+  const sunCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xfff4dc, transparent: true, depthWrite: false, fog: false }));
+  sunCore.position.copy(sunSprite.position); sunCore.scale.set(34, 34, 1); scene.add(sunCore);
+
+  const hemi = new THREE.HemisphereLight(0xffe2c6, 0x6b5a80, .62); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffcf9e, 1.75);
+  sun.position.copy(sunDir).multiplyScalar(40); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+  Object.assign(sun.shadow.camera, { left: -17, right: 17, top: 17, bottom: -17, near: 1, far: 100 }); sun.shadow.camera.updateProjectionMatrix();
+  scene.add(sun); scene.add(sun.target);
+  const fill = new THREE.DirectionalLight(0x8fa8ff, .4); fill.position.set(20, 12, 24); scene.add(fill);
+
+  const M = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, flatShading: true, roughness: .86, metalness: 0 }, o || {}));
+  function shade(o, cast = true) { o.traverse(m => { if (m.isMesh) { m.castShadow = cast; m.receiveShadow = true; } }); return o; }
+
+  // ---------- world layout ----------
+  const R = 11, EDGE = .18;
+  const VILLAGES = [
+    { id: 'huegelheim', name: 'Hügelheim', x: -6.3, z: 2.5, stage: 2, bel: { gold: 0, teal: 0, pink: 0, neutral: 20 } },
+    { id: 'sonnfeld', name: 'Sonnfeld', x: -2.8, z: -6.4, stage: 1, bel: { gold: 0, teal: 0, pink: 0, neutral: 18 } },
+    { id: 'kleinmoos', name: 'Kleinmoos', x: 2.7, z: -6.0, stage: 1, bel: { gold: 0, teal: 0, pink: 0, neutral: 18 } },
+    { id: 'fischbach', name: 'Fischbach', x: 5.9, z: 3.4, stage: 3, bel: { gold: 0, teal: 0, pink: 0, neutral: 20 } },
+    { id: 'kraehenwinkel', name: 'Krähenwinkel', x: -1.6, z: 6.6, stage: 2, bel: { gold: 0, teal: 0, pink: 0, neutral: 20 } }
+  ];
+  const TEMPLES = { gold: { x: -5.8, z: -2.1 }, teal: { x: 6.6, z: -1.9 }, pink: { x: 2.4, z: 7.0 } };
+  const STAIR = { x: -1.9, z: -2.4 };
+  const POND = { x: 2.0, z: -1.2, r: 1.25 };
+  function rawH(x, z) {
+    const r = Math.hypot(x, z) / R; if (r >= 1) return EDGE;
+    const n = fbm(x * .19 + 3.1, z * .19 + 7.7);
+    const h = .5 + n * 1.55, e = smooth(.8, 1, r);
+    return h * (1 - e) + EDGE * e;
+  }
+  const flats = [];
+  VILLAGES.forEach(v => flats.push({ x: v.x, z: v.z, r: 1.9, h: rawH(v.x, v.z) }));
+  Object.values(TEMPLES).forEach(t => flats.push({ x: t.x, z: t.z, r: 1.5, h: rawH(t.x, t.z) + .7 }));
+  flats.push({ x: STAIR.x, z: STAIR.z, r: 1.1, h: rawH(STAIR.x, STAIR.z) + .35 });
+  flats.push({ x: POND.x, z: POND.z, r: POND.r, h: .4 });
+  function heightAt(x, z) {
+    let h = rawH(x, z);
+    for (const f of flats) { const d = Math.hypot(x - f.x, z - f.z); if (d < f.r + 1.3) { const t = 1 - smooth(f.r, f.r + 1.3, d); h = h * (1 - t) + f.h * t; } }
+    return h;
+  }
+
+  // ---------- island ----------
+  const island = new THREE.Group(); scene.add(island);
+  const RINGS = 20, SEG = 60;
+  const terrainVerts = [[0, heightAt(0, 0), 0]], ringStart = [];
+  for (let i = 1; i <= RINGS; i++) {
+    ringStart[i] = terrainVerts.length;
+    const rr = R * i / RINGS;
+    for (let s = 0; s < SEG; s++) {
+      const a = s / SEG * Math.PI * 2 + (i < RINGS ? (hash(i, s) - .5) * .06 : 0);
+      const rj = i < RINGS ? rr + (hash(s, i) - .5) * .25 : rr;
+      const x = Math.cos(a) * rj, z = Math.sin(a) * rj; terrainVerts.push([x, i === RINGS ? EDGE : heightAt(x, z), z]);
+    }
+  }
+  const tris = [];
+  for (let s = 0; s < SEG; s++) tris.push([0, ringStart[1] + (s + 1) % SEG, ringStart[1] + s]);
+  for (let i = 1; i < RINGS; i++) for (let s = 0; s < SEG; s++) {
+    const a = ringStart[i] + s, b = ringStart[i] + (s + 1) % SEG, c = ringStart[i + 1] + s, d = ringStart[i + 1] + (s + 1) % SEG;
+    tris.push([a, b, d]); tris.push([a, d, c]);
+  }
+  const tPos = new Float32Array(tris.length * 9), tCol = new Float32Array(tris.length * 9);
+  const faceInfo = [];
+  const cA = new THREE.Vector3(), cB = new THREE.Vector3(), cC = new THREE.Vector3(), nrm = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+  tris.forEach((t, k) => {
+    [cA, cB, cC].forEach((v, j) => { const p = terrainVerts[t[j]]; v.set(p[0], p[1], p[2]); tPos.set(p, k * 9 + j * 3); });
+    e1.subVectors(cB, cA); e2.subVectors(cC, cA); nrm.crossVectors(e1, e2).normalize(); if (nrm.y < 0) nrm.negate();
+    const cx = (cA.x + cB.x + cC.x) / 3, cz = (cA.z + cB.z + cC.z) / 3, cy = (cA.y + cB.y + cC.y) / 3, r = Math.hypot(cx, cz) / R;
+    let kind;
+    if (r > .9) kind = 'sand';
+    else if (nrm.y < .78) kind = 'rock';
+    else if (cy > 1.55) kind = 'meadow';
+    else kind = fbm(cx * .7, cz * .7) > .5 ? 'grassA' : 'grassB';
+    faceInfo.push({ cx, cz, kind, shore: r > .86 && r <= .9, v: (hash(cx, cz) - .5), base: new THREE.Color() });
+  });
+  const terrainGeo = new THREE.BufferGeometry();
+  terrainGeo.setAttribute('position', new THREE.BufferAttribute(tPos, 3));
+  terrainGeo.setAttribute('color', new THREE.BufferAttribute(tCol, 3));
+  terrainGeo.computeVertexNormals();
+  const terrain = new THREE.Mesh(terrainGeo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: .95 }));
+  terrain.receiveShadow = true; island.add(terrain);
+
+  // cliff underside
+  const cliffFaces = []; let cliffGeo;
+  (function () {
+    const K = 11, rings = [];
+    for (let k = 0; k <= K; k++) {
+      const ring = [];
+      for (let s = 0; s < SEG; s++) {
+        const a = s / SEG * Math.PI * 2;
+        if (k === 0) { ring.push([Math.cos(a) * R, EDGE, Math.sin(a) * R]); continue; }
+        const f = 1 - Math.pow(k / K, 1.3) * .93;
+        const rr = R * f * (1 + (vnoise(s * .45, k * .9) - .5) * .16) + (k === 1 ? .25 : 0);
+        const aa = a + (hash(k, s) - .5) * .05;
+        ring.push([Math.cos(aa) * rr, EDGE - k * 1.12 - vnoise(s * .3, k) * .6, Math.sin(aa) * rr]);
+      }
+      rings.push(ring);
+    }
+    const tip = [0.6, EDGE - K * 1.12 - 3.2, -0.4];
+    const pos = [], col = [];
+    function face(p1, p2, p3, k) { pos.push(...p1, ...p2, ...p3); cliffFaces.push({ band: Math.min(4, Math.floor(k / 2.3)), v: hash(p1[0], p1[2]) - .5 }); for (let i = 0; i < 9; i++) col.push(0); }
+    for (let k = 0; k < K; k++) for (let s = 0; s < SEG; s++) {
+      const a = rings[k][s], b = rings[k][(s + 1) % SEG], c = rings[k + 1][s], d = rings[k + 1][(s + 1) % SEG];
+      face(a, c, d, k); face(a, d, b, k);
+    }
+    for (let s = 0; s < SEG; s++) face(rings[K][s], tip, rings[K][(s + 1) % SEG], K);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); cliffGeo = g;
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: .95, side: THREE.DoubleSide }));
+    m.receiveShadow = true; island.add(m);
+  })();
+
+  // water: pond, river ribbon, waterfall
+  const waterMat = new THREE.MeshStandardMaterial({ color: 0x5cbad9, roughness: .15, metalness: .1, transparent: true, opacity: .92, emissive: 0x1a5a7a, emissiveIntensity: .25, side: THREE.DoubleSide });
+  const pond = new THREE.Mesh(new THREE.CircleGeometry(POND.r + .35, 28), waterMat); pond.rotation.x = -Math.PI / 2; pond.position.set(POND.x, .56, POND.z); island.add(pond);
+  const riverPts = [[POND.x + .9, POND.z + .4], [3.8, -0.3], [5.0, .7], [6.9, 1.1], [8.8, .8], [R + .05, .55]].map(p => new THREE.Vector3(p[0], 0, p[1]));
+  const riverCurve = new THREE.CatmullRomCurve3(riverPts);
+  (function () {
+    const N = 70, pos = [], idx = [];
+    for (let i = 0; i <= N; i++) {
+      const p = riverCurve.getPointAt(i / N), tg = riverCurve.getTangentAt(i / N), side = new THREE.Vector3(-tg.z, 0, tg.x).normalize().multiplyScalar(.28 + .06 * Math.sin(i));
+      const l = p.clone().add(side), r = p.clone().sub(side);
+      pos.push(l.x, heightAt(l.x, l.z) + .05, l.z, r.x, heightAt(r.x, r.z) + .05, r.z);
+      if (i < N) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+    island.add(new THREE.Mesh(g, waterMat));
+  })();
+  const fallCanvas = document.createElement('canvas'); fallCanvas.width = 32; fallCanvas.height = 128;
+  (function () { const c = fallCanvas.getContext('2d'); for (let y = 0; y < 128; y++) for (let x = 0; x < 32; x += 4) { const a = .35 + .6 * Math.abs(Math.sin(y * .23 + x * 1.9)); c.fillStyle = 'rgba(225,245,255,' + a.toFixed(2) + ')'; c.fillRect(x, y, 4, 1); } })();
+  const fallTex = new THREE.CanvasTexture(fallCanvas); fallTex.wrapS = fallTex.wrapT = THREE.RepeatWrapping; fallTex.repeat.set(1, 4);
+  const fallA = Math.atan2(.55, R);
+  const fall = new THREE.Mesh(new THREE.PlaneGeometry(.75, 15), new THREE.MeshBasicMaterial({ map: fallTex, transparent: true, opacity: .9, side: THREE.DoubleSide, depthWrite: false }));
+  fall.position.set(Math.cos(fallA) * (R + .12), EDGE - 7.4, Math.sin(fallA) * (R + .12)); fall.rotation.y = Math.PI / 2 - fallA; island.add(fall);
+  const mist = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xe6f6ff, transparent: true, opacity: .55, depthWrite: false }));
+  mist.position.set(Math.cos(fallA) * (R + .2), EDGE - 14.5, Math.sin(fallA) * (R + .2)); mist.scale.set(4, 3, 1); island.add(mist);
+
+  // ---------- builders ----------
+  const roofGeoBase = (() => { const g = new THREE.CylinderGeometry(.42, .42, .8, 3, 1); g.rotateZ(Math.PI / 2); g.rotateX(-Math.PI / 2); g.scale(1, .72, 1); return g; })();
+  const matCream = M(0xcfc3aa), matRoof = M(0x6e3a2a, { roughness: .8 }), matDoor = M(0x6b4a32), matWin = M(0xffd27a, { emissive: 0xffb84a, emissiveIntensity: .7 }), matChim = M(0x8c8378), matStone = M(0xb8b0a2), matStone2 = M(0x9e968a), matWood = M(0x5a3d29);
+  function house(s) {
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.BoxGeometry(.7, .52, .6), matCream); b.position.y = .26; g.add(b);
+    const r = new THREE.Mesh(roofGeoBase, matRoof); r.position.y = .52 + .15; g.add(r);
+    const d = new THREE.Mesh(new THREE.BoxGeometry(.15, .25, .02), matDoor); d.position.set(-.12, .125, .305); g.add(d);
+    const w = new THREE.Mesh(new THREE.BoxGeometry(.13, .12, .02), matWin); w.position.set(.17, .3, .305); g.add(w);
+    const c = new THREE.Mesh(new THREE.BoxGeometry(.09, .22, .09), matChim); c.position.set(-.2, .8, -.1); g.add(c);
+    g.scale.setScalar(s); return shade(g);
+  }
+  const treeCols = [0x5b8a42, 0x4b7a38, 0x66924a, 0x3f6a32].map(c => M(c));
+  function tree(kind, s) {
+    const g = new THREE.Group();
+    if (kind === 'pine') {
+      const t = new THREE.Mesh(new THREE.CylinderGeometry(.05, .07, .35, 5), matWood); t.position.y = .17; g.add(t);
+      const m = M(0x335f3a);
+      [[.42, .55, .5], [.34, .48, .82], [.24, .4, 1.1]].forEach(([r, h, y]) => { const c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), m); c.position.y = y; g.add(c); });
+    } else {
+      const t = new THREE.Mesh(new THREE.CylinderGeometry(.06, .09, .55, 5), matWood); t.position.y = .27; g.add(t);
+      const mat = treeCols[Math.floor(rnd() * treeCols.length)];
+      const c = new THREE.Mesh(new THREE.IcosahedronGeometry(.46, 0), mat); c.position.y = .82; c.rotation.set(rnd(), rnd(), rnd()); g.add(c);
+      if (rnd() > .5) { const c2 = new THREE.Mesh(new THREE.IcosahedronGeometry(.3, 0), mat); c2.position.set(.26, .64, .1); g.add(c2); }
+    }
+    g.scale.setScalar(s); g.rotation.y = rnd() * 6.28; return shade(g);
+  }
+  function rock(s) { const m = new THREE.Mesh(new THREE.DodecahedronGeometry(.3, 0), M(0xb9ae9e)); m.scale.set(s, s * .7, s); m.rotation.set(rnd(), rnd(), rnd()); return shade(m); }
+
+  // ---------- villages ----------
+  const hitMeshes = [], flags = [], villagers = [];
+  const labelRoot = document.getElementById('labels'), labels = [];
+  function addLabel(html, cls, obj, dy) { const el = document.createElement('div'); el.className = 'lbl ' + (cls || ''); el.innerHTML = html; labelRoot.appendChild(el); const l = { el, obj, dy }; labels.push(l); return l; }
+  const shirtCols = [0x55607a, 0x6e5444, 0x4c654e, 0x5e5470, 0x7a6a4e];
+  function ownerOf(v) { const b = v.bel, tot = b.gold + b.teal + b.pink + b.neutral; for (const k of GODS) { const others = GODS.filter(o => o !== k).map(o => b[o]); if (b[k] * 2 >= tot && b[k] > Math.max(...others)) return k; } return 'neutral'; }
+  VILLAGES.forEach(v => {
+    v.owner = ownerOf(v);
+    const g = new THREE.Group(); island.add(g); v.group = g;
+    const y0 = heightAt(v.x, v.z);
+    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, .08, 14), M(0x9d968a)); plaza.position.set(v.x, y0 + .02, v.z); plaza.receiveShadow = true; g.add(plaza);
+    const well = new THREE.Group();
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(.2, .22, .2, 10, 1, true), matStone); ring.position.y = .1; well.add(ring);
+    const water = new THREE.Mesh(new THREE.CircleGeometry(.19, 10), waterMat); water.rotation.x = -Math.PI / 2; water.position.y = .12; well.add(water);
+    [-.17, .17].forEach(x => { const p = new THREE.Mesh(new THREE.BoxGeometry(.04, .38, .04), matWood); p.position.set(x, .29, 0); well.add(p); });
+    const wr = new THREE.Mesh(new THREE.ConeGeometry(.3, .2, 4), matRoof); wr.position.y = .56; wr.rotation.y = Math.PI / 4; well.add(wr);
+    well.position.set(v.x + .25, y0 + .06, v.z - .15); g.add(shade(well));
+    const count = v.stage === 1 ? 3 : v.stage === 2 ? 5 : 7;
+    for (let i = 0; i < count; i++) {
+      const a = i / count * Math.PI * 2 + hash(i, v.x) * .5, rr = 1.45 + (i % 2) * .35;
+      const hx = v.x + Math.cos(a) * rr, hz = v.z + Math.sin(a) * rr;
+      const h = house(.9 + hash(v.z, i) * .3); h.position.set(hx, heightAt(hx, hz), hz); h.lookAt(v.x, h.position.y, v.z); g.add(h);
+    }
+    // banner
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(.025, .03, 1.5, 6), matWood); pole.position.set(v.x - .75, y0 + .75, v.z + .55); g.add(shade(pole));
+    const flagGeo = new THREE.PlaneGeometry(.56, .34, 8, 1); flagGeo.translate(.28, 0, 0);
+    const flagMat = new THREE.MeshStandardMaterial({ color: COL[v.owner], side: THREE.DoubleSide, roughness: .7 });
+    const flag = new THREE.Mesh(flagGeo, flagMat); flag.position.set(v.x - .73, y0 + 1.32, v.z + .55); flag.castShadow = true; g.add(flag);
+    flags.push({ mesh: flag, base: flagGeo.attributes.position.array.slice(), speed: 3, v });
+    v.flag = flag;
+    // villagers
+    const n = 2 + v.stage;
+    for (let i = 0; i < n; i++) {
+      const p = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.06, .085, .22, 6), M(shirtCols[Math.floor(rnd() * shirtCols.length)])); body.position.y = .11; p.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(.068, 8, 6), M(0xf1c9a5)); head.position.y = .29; p.add(head);
+      if (rnd() > .6) { const hood = new THREE.Mesh(new THREE.ConeGeometry(.085, .14, 6), M(0x3e3a36)); hood.position.y = .34; p.add(hood); }
+      shade(p); g.add(p);
+      villagers.push({ obj: p, v, r: .55 + rnd() * .35, a: rnd() * 6.28, sp: (.25 + rnd() * .35) * (rnd() > .5 ? 1 : -1), jump: 0, ph: rnd() * 6 });
+    }
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 2, 12), new THREE.MeshBasicMaterial({ visible: false })); hit.position.set(v.x, y0 + .8, v.z); hit.userData.v = v; g.add(hit); hitMeshes.push(hit);
+    const anchor = new THREE.Object3D(); anchor.position.set(v.x, y0 + 1.9, v.z); g.add(anchor); v.anchor = anchor;
+    v.label = addLabel('<i style="background:' + CSSC[v.owner] + '"></i>' + v.name, '', anchor, 0);
+  });
+
+  // ---------- temples & gods ----------
+  const godObjs = {};
+  function temple(key) {
+    const t = TEMPLES[key], y0 = heightAt(t.x, t.z), g = new THREE.Group(), color = COL[key];
+    [[2.3, .22, matStone2], [2.0, .22, matStone], [1.7, .2, matStone2]].forEach(([s, h, m], i) => { const b = new THREE.Mesh(new THREE.BoxGeometry(s, h, s), m); b.position.y = h / 2 + i * .22; g.add(b); });
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * Math.PI * 2 + Math.PI / 8; const c = new THREE.Mesh(new THREE.CylinderGeometry(.085, .1, 1.15, 8), matCream);
+      c.position.set(Math.cos(a) * .66, .66 + .575, Math.sin(a) * .66); g.add(c);
+    }
+    const ent = new THREE.Mesh(new THREE.CylinderGeometry(.92, .92, .16, 8), matStone); ent.position.y = 1.9; g.add(ent);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.05, .75, 8), M(color, { roughness: .45, metalness: .35, emissive: color, emissiveIntensity: .12 })); roof.position.y = 2.36; g.add(roof);
+    const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(.18, 0), new THREE.MeshBasicMaterial({ color: 0xfff6d8 })); orb.position.y = 2.95; g.add(orb);
+    const light = new THREE.PointLight(color, 1.3, 7, 2); light.position.y = 2.4; g.add(light);
+    shade(g); g.position.set(t.x, y0, t.z); island.add(g);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.35, 1, 3, 20, 1, true), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    shaft.position.set(t.x, y0 + 4.4, t.z); island.add(shaft);
+    return { g, orb, y0, shaft };
+  }
+  const glowSprites = [];
+  const glowSprite = (color, s) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: .4, blending: THREE.AdditiveBlending, depthWrite: false })); sp.scale.set(s, s, 1); glowSprites.push(sp); return sp; };
+  function godMat(c, o) { return new THREE.MeshStandardMaterial(Object.assign({ color: c, emissive: c, emissiveIntensity: .45, flatShading: true, roughness: .4, metalness: .2, transparent: true, opacity: .93 }, o || {})); }
+  // ---------- gods as ancient stone idols ----------
+  function stoneMat(c) { return new THREE.MeshStandardMaterial({ color: c, flatShading: true, roughness: .92, metalness: .05 }); }
+  function glowMat(c, i) { return new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i || 1.6, flatShading: true, roughness: .4 }); }
+  function idolBase(stone, color) {
+    const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+    const head = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), stoneMat(stone)); head.scale.set(.95, 1.25, .8); body.add(head);
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(1.5, .22, .5), stoneMat(stone)); brow.position.set(0, .28, .58); brow.rotation.x = -.15; body.add(brow);
+    const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.0, .5, .6), stoneMat(stone)); jaw.position.set(0, -.72, .38); body.add(jaw);
+    const eyeMat = glowMat(color, 2.2);
+    const eyes = [-.3, .3].map(x => { const e = new THREE.Mesh(new THREE.BoxGeometry(.34, .07, .06), eyeMat); e.position.set(x, .1, .82); e.rotation.z = x < 0 ? -.18 : .18; body.add(e); return e; });
+    const ring = new THREE.Group(); ring.rotation.x = Math.PI / 2 - .35; g.add(ring);
+    ring.add(new THREE.Mesh(new THREE.TorusGeometry(1.95, .045, 4, 48), stoneMat(0x3a3a42)));
+    const runeMat = glowMat(color, 1.4);
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r = new THREE.Mesh(new THREE.BoxGeometry(.16, .05, .3), runeMat); r.position.set(Math.cos(a) * 1.95, Math.sin(a) * 1.95, 0); r.rotation.z = a; ring.add(r); }
+    const glow = glowSprite(color, 4.5); glow.position.z = -.6; g.add(glow);
+    shade(body);
+    return { g, body, ring, eyeMat, runeMat };
+  }
+  function thunderIdol() {
+    const I = idolBase(0x3b3f4a, COL.gold), metal = new THREE.MeshStandardMaterial({ color: 0x8a6a2a, flatShading: true, roughness: .45, metalness: .6 });
+    const crest = new THREE.Mesh(new THREE.BoxGeometry(.14, .9, 1.5), metal); crest.position.set(0, 1.25, -.05); I.body.add(crest);
+    [-1, 1].forEach(s => { const c = new THREE.Mesh(new THREE.BoxGeometry(.18, .9, .6), metal); c.position.set(s * .78, -.2, .25); c.rotation.z = s * .12; I.body.add(c); const w = new THREE.Mesh(new THREE.ConeGeometry(.18, 1.1, 4), metal); w.position.set(s * 1.0, .75, -.1); w.rotation.z = -s * .9; I.body.add(w); });
+    const pts = [new THREE.Vector3(-1.9, 0, 0), new THREE.Vector3(-1.1, .4, .3), new THREE.Vector3(-.5, -.1, .4), new THREE.Vector3(.2, .35, .3), new THREE.Vector3(.9, -.1, .2), new THREE.Vector3(1.9, .2, 0)];
+    const arc = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 30, .03, 4, false), new THREE.MeshBasicMaterial({ color: 0xfff1c0 })); arc.position.y = -1.4; I.g.add(arc);
+    shade(I.body);
+    I.g.userData.anim = (t) => { I.g.position.y = Math.sin(t * .8) * .15; I.ring.rotation.z = t * .25; I.eyeMat.emissiveIntensity = 1.8 + Math.sin(t * 3) * .5; arc.visible = (Math.sin(t * 7.3) + Math.sin(t * 3.1)) > 1.2; arc.rotation.y = t * 2; };
+    return I.g;
+  }
+  function harvestIdol() {
+    const I = idolBase(0x4a4a3e, COL.teal), wood = stoneMat(0x4a3726), leaf = glowMat(0x5fdc6a, .9);
+    [-1, 1].forEach(s => {
+      const main = new THREE.Group(); main.position.set(s * .55, .95, -.1); main.rotation.z = -s * .55; I.body.add(main);
+      const b0 = new THREE.Mesh(new THREE.CylinderGeometry(.06, .1, 1.4, 5), wood); b0.position.y = .7; main.add(b0);
+      [[.5, .7], [.95, -.6], [1.25, .5]].forEach(([y, rz]) => { const br = new THREE.Mesh(new THREE.CylinderGeometry(.03, .06, .65, 5), wood); br.position.set(Math.sin(rz) * -.3, y + .25, 0); br.rotation.z = rz; main.add(br); const lf = new THREE.Mesh(new THREE.TetrahedronGeometry(.11, 0), leaf); lf.position.set(Math.sin(rz) * -.6, y + .5, 0); main.add(lf); });
+    });
+    const moss = stoneMat(0x4f7a3a);
+    [[-.5, .55, .55], [.6, -.2, .6], [.1, -.85, .55], [-.75, -.4, .45]].forEach(([x, y, z]) => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.18, 0), moss); m.position.set(x, y, z); m.scale.y = .5; I.body.add(m); });
+    const seeds = new THREE.Group(); I.g.add(seeds);
+    for (let i = 0; i < 10; i++) { const s = new THREE.Mesh(new THREE.TetrahedronGeometry(.07, 0), leaf); const a = i / 10 * Math.PI * 2; s.position.set(Math.cos(a) * 1.4, (i % 3) * .4 - .4, Math.sin(a) * 1.4); seeds.add(s); }
+    shade(I.body);
+    I.g.userData.anim = (t) => { I.g.position.y = Math.sin(t * .7 + 1) * .15; I.ring.rotation.z = -t * .18; seeds.rotation.y = t * .3; seeds.children.forEach((s, i) => s.position.y = Math.sin(t + i) * .5); I.eyeMat.emissiveIntensity = 1.6 + Math.sin(t * 1.5) * .4; };
+    return I.g;
+  }
+  function chaosIdol() {
+    const I = idolBase(0x1c1a20, COL.pink), horn = stoneMat(0x2a2228), crack = glowMat(COL.pink, 2);
+    [-1, 1].forEach(s => { const h1 = new THREE.Mesh(new THREE.ConeGeometry(.2, 1.1, 5), horn); h1.position.set(s * .75, 1.05, -.05); h1.rotation.z = -s * .7; I.body.add(h1); const h2 = new THREE.Mesh(new THREE.ConeGeometry(.12, .7, 5), horn); h2.position.set(s * 1.25, 1.55, -.05); h2.rotation.z = -s * .15; I.body.add(h2); });
+    [[-.15, .55, .2, .7], [.35, -.35, -.5, .55], [-.45, -.5, .9, .4]].forEach(([x, y, rz, l]) => { const c = new THREE.Mesh(new THREE.BoxGeometry(.035, l, .03), crack); c.position.set(x, y, .84); c.rotation.z = rz; I.body.add(c); });
+    const shards = new THREE.Group(); I.g.add(shards);
+    for (let i = 0; i < 7; i++) { const s = new THREE.Mesh(new THREE.TetrahedronGeometry(.2 + (i % 3) * .06, 0), horn); const a = i / 7 * Math.PI * 2; s.position.set(Math.cos(a) * 1.55, Math.sin(a * 3) * .35, Math.sin(a) * 1.55); shards.add(s); const e = new THREE.Mesh(new THREE.TetrahedronGeometry(.06, 0), crack); e.position.copy(s.position); shards.add(e); }
+    shade(I.body);
+    I.g.userData.anim = (t) => { I.g.position.y = Math.sin(t * 1.1 + 2) * .15; I.body.rotation.z = Math.sin(t * .9) * .05; I.ring.rotation.z = t * .4; shards.rotation.y = -t * .5; shards.children.forEach((s, i) => s.rotation.set(t + i, t * 1.3, 0)); crack.emissiveIntensity = 1.6 + Math.abs(Math.sin(t * 2.3)) * 1.2; I.eyeMat.emissiveIntensity = crack.emissiveIntensity + .4; };
+    return I.g;
+  }
+  [['gold', thunderIdol], ['teal', harvestIdol], ['pink', chaosIdol]].forEach(([k, fn]) => {
+    const tp = temple(k), av = fn(); const holder = new THREE.Group(); holder.position.set(TEMPLES[k].x, tp.y0 + 6.9, TEMPLES[k].z); holder.add(av); island.add(holder);
+    holder.scale.setScalar(1.05);
+    const anchor = new THREE.Object3D(); anchor.position.set(TEMPLES[k].x, tp.y0 + 4.7, TEMPLES[k].z); island.add(anchor);
+    godObjs[k] = { tp, av, holder };
+    godObjs[k].label = addLabel('<i style="background:' + CSSC[k] + '"></i>' + GOD[k], 'god', anchor, 0);
+  });
+
+  // Himmelstreppe
+  (function () {
+    const y0 = heightAt(STAIR.x, STAIR.z), g = new THREE.Group(); g.position.set(STAIR.x, y0, STAIR.z); island.add(g);
+    for (let i = 0; i < 7; i++) {
+      const s = 1.35 - i * .15, h = .38, built = i < 3;
+      const m = built ? new THREE.Mesh(new THREE.BoxGeometry(s, h, s), i % 2 ? matStone : matStone2)
+        : new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(s, h, s)), new THREE.LineBasicMaterial({ color: 0xf3c25a, transparent: true, opacity: .55 }));
+      m.position.y = h / 2 + i * h; m.rotation.y = i * .28; if (built) { m.castShadow = true; m.receiveShadow = true; } g.add(m);
+    }
+    const a = new THREE.Object3D(); a.position.y = 7 * .38 + .4; g.add(a);
+    addLabel('Himmelstreppe', '', a, 0);
+  })();
+
+  // vegetation
+  const reserved = [...VILLAGES.map(v => ({ x: v.x, z: v.z, r: 2.4 })), ...Object.values(TEMPLES).map(t => ({ x: t.x, z: t.z, r: 1.9 })), { x: STAIR.x, z: STAIR.z, r: 1.3 }, { x: POND.x, z: POND.z, r: POND.r + .7 }];
+  const riverSamples = riverCurve.getSpacedPoints(40);
+  function free(x, z, pad) { if (Math.hypot(x, z) > R - 1.1) return false; for (const s of reserved) if (Math.hypot(x - s.x, z - s.z) < s.r + (pad || 0)) return false; for (const p of riverSamples) if (Math.hypot(x - p.x, z - p.z) < .75) return false; return true; }
+  let placed = 0, tries = 0;
+  while (placed < 70 && tries < 900) {
+    tries++; const a = rnd() * 6.28, r = Math.sqrt(rnd()) * (R - 1.2), x = Math.cos(a) * r, z = Math.sin(a) * r;
+    if (!free(x, z, .2)) continue;
+    const cluster = fbm(x * .35 + 9, z * .35 + 2); if (cluster < .42 && rnd() > .25) continue;
+    const t = tree(heightAt(x, z) > 1.3 && rnd() > .4 ? 'pine' : 'round', .75 + rnd() * .55); t.position.set(x, heightAt(x, z) - .03, z); island.add(t); reserved.push({ x, z, r: .55 }); placed++;
+  }
+  for (let i = 0; i < 16; i++) { const a = rnd() * 6.28, r = Math.sqrt(rnd()) * (R - 1), x = Math.cos(a) * r, z = Math.sin(a) * r; if (!free(x, z, 0)) continue; const k = rock(.6 + rnd() * .9); k.position.set(x, heightAt(x, z) + .05, z); island.add(k); }
+  // fields near villages (small coloured patches)
+  [[-4.6, 4.4, .4], [-1.0, -7.6, -.3], [4.6, 5.6, .8]].forEach(([x, z, r]) => { const f = new THREE.Mesh(new THREE.BoxGeometry(1.4, .06, .9), M(0xe3bd5a)); f.position.set(x, heightAt(x, z) + .02, z); f.rotation.y = r; f.receiveShadow = true; island.add(f); });
+
+  // floating islets
+  const islets = [];
+  [[-17, -2, 7, 1.6], [16, -4, -9, 1.2], [-9, -6, -16, 1.0], [12, 3, 12, .8]].forEach(([x, y, z, s]) => {
+    const g = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.15, .35, 9), M(0x8fc460)); top.position.y = .17; g.add(top);
+    const bot = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.4, 9), M(0xa8714f)); bot.rotation.x = Math.PI; bot.position.y = -1.2; g.add(bot);
+    const t = tree('round', .9); t.position.y = .34; t.position.x = .3; g.add(t);
+    g.position.set(x, y, z); g.scale.setScalar(s); shade(g); g.userData.ph = rnd() * 6; scene.add(g); islets.push(g);
+  });
+  // cloud sea + distant clouds
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffd8cc, transparent: true, opacity: .96 });
+  const clouds = new THREE.Group(); scene.add(clouds);
+  for (let i = 0; i < 46; i++) {
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(3 + rnd() * 5, 1), cloudMat);
+    const a = rnd() * 6.28, r = 4 + rnd() * 55; m.position.set(Math.cos(a) * r, -18 - rnd() * 5, Math.sin(a) * r); m.scale.set(1.5, .55, 1.2); clouds.add(m);
+  }
+  const farMat = new THREE.MeshLambertMaterial({ color: 0xffe6da, transparent: true, opacity: .85 });
+  for (let i = 0; i < 12; i++) {
+    const g = new THREE.Group(), a = rnd() * 6.28, r = 70 + rnd() * 40;
+    for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(3 + rnd() * 3, 1), farMat); m.position.set(k * 3.5 - 5, rnd() * 2, rnd() * 2); m.scale.y = .6; g.add(m); }
+    g.position.set(Math.cos(a) * r, 2 + rnd() * 16, Math.sin(a) * r); g.lookAt(0, g.position.y, 0); clouds.add(g);
+  }
+
+  // ---------- units ----------
+  function prophet(color) {
+    const g = new THREE.Group();
+    const robe = new THREE.Mesh(new THREE.ConeGeometry(.2, .55, 7), M(0x2e2a34)); robe.position.y = .27; g.add(robe);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.11, 8, 6), M(0xf1c9a5)); head.position.y = .62; g.add(head);
+    const hood = new THREE.Mesh(new THREE.ConeGeometry(.15, .32, 7), M(0x2a2630)); hood.position.y = .7; g.add(hood);
+    const staff = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .8, 5), matWood); staff.position.set(.19, .4, .02); g.add(staff);
+    const tip = new THREE.Mesh(new THREE.OctahedronGeometry(.07, 0), new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 2 })); tip.position.set(.19, .82, .02); g.add(tip);
+    return shade(g);
+  }
+  const walkers = [];
+  function sendProphet(from, toV, color, owner, dur, onArrive) {
+    const p = prophet(color); island.add(p);
+    const mid = new THREE.Vector3((from.x + toV.x) / 2 + (hash(from.x, toV.z) - .5) * 3, 0, (from.z + toV.z) / 2 + (hash(toV.x, from.z) - .5) * 3);
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(from.x, 0, from.z), mid, new THREE.Vector3(toV.x + .8, 0, toV.z + .6)]);
+    const lbl = addLabel('<i style="background:' + CSSC[owner] + '"></i>Prophet', '', p, 1.1);
+    walkers.push({ p, curve, t: 0, dur, toV, owner, lbl, onArrive });
+  }
+
+  // selection ring
+  const selRing = new THREE.Mesh(new THREE.TorusGeometry(2, .05, 6, 64), new THREE.MeshBasicMaterial({ color: 0xfff1c2, transparent: true, opacity: .9 }));
+  selRing.rotation.x = Math.PI / 2; selRing.visible = false; island.add(selRing);
+
+  // ---------- looks ----------
+  const LOOKS = {
+    sturm: {
+      name: 'Sturmabend', sky: ['#0d1730', '#e8783a', '#1a2030'], spread: 3.6, fog: [0x262c3c, 45, 150],
+      hemi: [0x9fb0d6, 0x2a2230, .42], sun: [0xffa257, 2.4, [-0.8, 0.2, -0.56]], fill: [0x5a7cff, .32], exposure: .98,
+      sunSprite: [0xff7a2a, 120, 0xffc08a, 26], clouds: [0x434b60, .97], far: [0x343b50, .92], water: 0x3a8db0, glow: .32, body: '#0d1730',
+      ground: { sand: '#c4a873', rock: '#857e74', meadow: '#8fb556', grassA: '#6ea548', grassB: '#5b913d' },
+      cliff: ['#8f5e42', '#734a34', '#5b3a2a', '#462c20', '#341f17'], flashes: true
+    },
+    sonne: {
+      name: 'Sonnentag', sky: ['#123f8f', '#5f9fdc', '#2f5f96'], spread: 2.1, fog: [0x5d86b8, 90, 240],
+      hemi: [0xbcd6f5, 0x3a4226, .38], sun: [0xffe2b0, 1.85, [-0.55, 0.62, -0.42]], fill: [0x7f9fe0, .22], exposure: .86,
+      sunSprite: [0xffe6a8, 70, 0xfff6e0, 20], clouds: [0xdfe6f0, .96], far: [0xd2dcea, .9], water: 0x1b78b8, glow: .28, body: '#123f8f',
+      ground: { sand: '#d2ad5c', rock: '#8a7d6c', meadow: '#7db536', grassA: '#4c9f2a', grassB: '#3c8a22' },
+      cliff: ['#a8693c', '#8a5430', '#6d4126', '#55321e', '#402417'], flashes: false
+    }
+  };
+  let look = 'sturm', flashT = 4, flashV = 0;
+  const tmpL = new THREE.Color();
+  function applyLook(key) {
+    const L = LOOKS[key] || LOOKS.sturm; look = LOOKS[key] ? key : 'sturm';
+    const u = sky.material.uniforms; u.top.value.set(L.sky[0]); u.mid.value.set(L.sky[1]); u.bot.value.set(L.sky[2]); u.spread.value = L.spread; u.flash.value = 0;
+    scene.fog.color.setHex(L.fog[0]); scene.fog.near = L.fog[1]; scene.fog.far = L.fog[2];
+    hemi.color.setHex(L.hemi[0]); hemi.groundColor.setHex(L.hemi[1]); hemi.intensity = L.hemi[2]; hemi.userData.base = L.hemi[2];
+    const d = new THREE.Vector3(...L.sun[2]).normalize();
+    sun.color.setHex(L.sun[0]); sun.intensity = L.sun[1]; sun.position.copy(d).multiplyScalar(40);
+    fill.color.setHex(L.fill[0]); fill.intensity = L.fill[1]; renderer.toneMappingExposure = L.exposure;
+    const sd = new THREE.Vector3(d.x, Math.min(d.y, .35), d.z).normalize();
+    sunSprite.material.color.setHex(L.sunSprite[0]); sunSprite.scale.set(L.sunSprite[1], L.sunSprite[1], 1); sunSprite.position.copy(sd).multiplyScalar(330);
+    sunCore.material.color.setHex(L.sunSprite[2]); sunCore.scale.set(L.sunSprite[3], L.sunSprite[3], 1); sunCore.position.copy(sunSprite.position);
+    cloudMat.color.setHex(L.clouds[0]); cloudMat.opacity = L.clouds[1]; farMat.color.setHex(L.far[0]); farMat.opacity = L.far[1];
+    waterMat.color.setHex(L.water);
+    glowSprites.forEach(s => s.material.opacity = L.glow);
+    const sandC = new THREE.Color(L.ground.sand);
+    faceInfo.forEach(f => { f.base.set(L.ground[f.kind]).offsetHSL(0, 0, f.v * .05); if (f.shore) f.base.lerp(sandC, .5); });
+    const cc = cliffGeo.attributes.color.array;
+    cliffFaces.forEach((f, i) => { tmpL.set(L.cliff[f.band]).offsetHSL(0, 0, f.v * .06); for (let j = 0; j < 3; j++) { cc[i * 9 + j * 3] = tmpL.r; cc[i * 9 + j * 3 + 1] = tmpL.g; cc[i * 9 + j * 3 + 2] = tmpL.b; } });
+    cliffGeo.attributes.color.needsUpdate = true;
+    paintTerritories();
+    document.body.style.background = L.body;
+    const btn = document.getElementById('look');
+    if (btn) { btn.setAttribute('aria-label', 'Stimmung wechseln, aktuell ' + L.name); btn.querySelector('#look-sun').style.display = look === 'sonne' ? '' : 'none'; btn.querySelector('#look-storm').style.display = look === 'sturm' ? '' : 'none'; }
+    try { localStorage.setItem('gw-look', look); } catch (e) {}
+  }
+
+  // ---------- territory painting ----------
+  const tmpC = new THREE.Color();
+  function paintTerritories() {
+    const src = [];
+    VILLAGES.forEach(v => { if (v.owner !== 'neutral') src.push({ x: v.x, z: v.z, r: 2.9, k: v.owner }); else src.push({ x: v.x, z: v.z, r: 2.6, k: null, contested: GODS.filter(g => v.bel[g] > 0) }); });
+    Object.keys(TEMPLES).forEach(k => src.push({ x: TEMPLES[k].x, z: TEMPLES[k].z, r: 3.1, k }));
+    const col = terrainGeo.attributes.color.array;
+    faceInfo.forEach((f, i) => {
+      tmpC.copy(f.base);
+      const hits = []; let neutralNear = null;
+      for (const s of src) { const d = Math.hypot(f.cx - s.x, f.cz - s.z); if (d < s.r) { if (s.k) { if (!hits.includes(s.k)) hits.push(s.k); } else neutralNear = s; } }
+      if (neutralNear && neutralNear.contested.length && hits.length === 0) { const c = neutralNear.contested, st = Math.abs(Math.floor((f.cx + f.cz) * 2.4)) % c.length; tmpC.lerp(new THREE.Color(COL[c[st]]), .16); }
+      else if (hits.length === 1) tmpC.lerp(new THREE.Color(COL[hits[0]]), .26);
+      else if (hits.length > 1) { const st = Math.floor((f.cx + f.cz) * 2.4) % hits.length; tmpC.lerp(new THREE.Color(COL[hits[Math.abs(st)]]), .3); }
+      for (let j = 0; j < 3; j++) { col[i * 9 + j * 3] = tmpC.r; col[i * 9 + j * 3 + 1] = tmpC.g; col[i * 9 + j * 3 + 2] = tmpC.b; }
+    });
+    terrainGeo.attributes.color.needsUpdate = true;
+  }
+  (function () {
+    let start = (location.hash || '').replace('#', '');
+    if (!LOOKS[start]) { try { start = localStorage.getItem('gw-look') || 'sturm'; } catch (e) { start = 'sturm'; } }
+    applyLook(LOOKS[start] ? start : 'sturm');
+  })();
+  document.getElementById('look').addEventListener('click', () => {
+    const next = look === 'sturm' ? 'sonne' : 'sturm'; applyLook(next); sfx.tap(); toast(LOOKS[next].name);
+    try { history.replaceState(null, '', '#' + next); } catch (e) {}
+  });
+
+  // ---------- sound ----------
+  let actx = null, muted = false;
+  function ac() { if (muted) return null; if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (actx.state === 'suspended') actx.resume(); return actx; }
+  function tone(f, dur, type, vol, delay) { const a = ac(); if (!a) return; const t0 = a.currentTime + (delay || 0); const o = a.createOscillator(), g = a.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol || .08, t0 + .015); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur); o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + .05); }
+  function noise(dur, vol, freq) { const a = ac(); if (!a) return; const b = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2); const s = a.createBufferSource(); s.buffer = b; const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq || 600; const g = a.createGain(); g.gain.value = vol || .3; s.connect(f).connect(g).connect(a.destination); s.start(); }
+  const sfx = {
+    tap: () => tone(740, .09, 'triangle', .06),
+    chime: () => { [659, 784, 988].forEach((f, i) => tone(f, .5, 'sine', .07, i * .09)); },
+    thunder: () => { noise(1.4, .5, 500); tone(70, .6, 'sawtooth', .05); },
+    fanfare: () => { [523, 659, 784, 1046].forEach((f, i) => tone(f, .55, 'triangle', .07, i * .11)); },
+    bad: () => { tone(220, .35, 'sawtooth', .04); tone(165, .5, 'sawtooth', .04, .15); },
+  };
+  document.getElementById('mute').addEventListener('click', e => { muted = !muted; e.currentTarget.setAttribute('aria-label', muted ? 'Ton einschalten' : 'Ton ausschalten'); document.getElementById('mute-wave').style.display = muted ? 'none' : ''; });
+
+  // ---------- HUD state ----------
+  let faith = 0, faithNext = null; const faithBar = document.getElementById('faith-bar'), faithNum = document.getElementById('faith-num');
+  function setFaith(v) { faith = Math.max(0, Math.min(100, v)); faithBar.style.width = faith + '%'; faithNum.textContent = Math.round(faith); refreshRadial(); }
+  setFaith(0);
+  const FAITH_TICK = 360;
+  setInterval(() => { if (faithNext == null || faith >= 100) return; if (--faithNext <= 0) { faithNext = FAITH_TICK; setFaith(faith + 1); } }, 1000);
+  const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  const toasts = document.getElementById('toasts');
+  function toast(msg, big) { const el = document.createElement('div'); el.className = 'toast' + (big ? ' big' : ''); el.textContent = msg; toasts.appendChild(el); while (toasts.children.length > 3) toasts.firstChild.remove(); setTimeout(() => el.remove(), big ? 3200 : 2400); }
+  const floats = [];
+  function floatText(text, sub, pos) { const el = document.createElement('div'); el.className = 'float'; el.innerHTML = text + (sub ? '<small>' + sub + '</small>' : ''); labelRoot.appendChild(el); floats.push({ el, pos: pos.clone(), t: 0 }); }
+
+  // ---------- effects ----------
+  const effects = [];
+  let shake = 0;
+  function cheer(v, strength) { villagers.forEach(p => { if (p.v === v) p.jump = strength || 1; }); }
+  function sparkleBurst(pos, color, n) {
+    const N = n || 60, posA = new Float32Array(N * 3), vel = [];
+    for (let i = 0; i < N; i++) { posA.set([pos.x, pos.y, pos.z], i * 3); vel.push(new THREE.Vector3((Math.random() - .5) * 3, 2 + Math.random() * 3, (Math.random() - .5) * 3)); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(posA, 3));
+    const pts = new THREE.Points(g, new THREE.PointsMaterial({ color, size: .14, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false })); island.add(pts);
+    let t = 0;
+    effects.push(dt => { t += dt; const a = g.attributes.position.array; for (let i = 0; i < N; i++) { vel[i].y -= 6 * dt; a[i * 3] += vel[i].x * dt; a[i * 3 + 1] += vel[i].y * dt; a[i * 3 + 2] += vel[i].z * dt; } g.attributes.position.needsUpdate = true; pts.material.opacity = Math.max(0, 1 - t / 1.4); if (t > 1.4) { island.remove(pts); return false; } return true; });
+  }
+  function rainOn(v, done) {
+    const y0 = heightAt(v.x, v.z), cloud = new THREE.Group();
+    const cm = new THREE.MeshLambertMaterial({ color: 0xf4f2ff, transparent: true, opacity: 0 });
+    [[0, 0, 0, 1.1], [1, .1, .2, .8], [-1, -.05, -.1, .85], [.3, .45, -.2, .7]].forEach(([x, y, z, s]) => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), cm); m.position.set(x, y, z); m.scale.y = .7; cloud.add(m); });
+    cloud.position.set(v.x, y0 + 5, v.z); island.add(cloud);
+    const N = 160, pa = new Float32Array(N * 6), seeds = [];
+    for (let i = 0; i < N; i++) { const a = Math.random() * 6.28, r = Math.random() * 1.6; seeds.push([v.x + Math.cos(a) * r, v.z + Math.sin(a) * r, Math.random()]); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pa, 3));
+    const lines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0 })); island.add(lines);
+    let t = 0, fired = false;
+    effects.push(dt => {
+      t += dt; const k = Math.min(1, t / .5), out = t > 3 ? Math.max(0, 1 - (t - 3) / .7) : 1;
+      cm.opacity = .95 * k * out; lines.material.opacity = .8 * (t > .4 ? 1 : 0) * out; cloud.position.y = y0 + 5 + Math.sin(t * 2) * .1;
+      const a = g.attributes.position.array;
+      for (let i = 0; i < N; i++) { const s = seeds[i]; const fallY = y0 + 4.6 - ((t * 7 + s[2] * 4.6) % 4.6); a.set([s[0], fallY, s[1], s[0], fallY - .25, s[1]], i * 6); }
+      g.attributes.position.needsUpdate = true;
+      if (!fired && t > 1.6) { fired = true; done && done(); }
+      if (t > 3.7) { island.remove(cloud); island.remove(lines); return false; } return true;
+    });
+  }
+  function lightningOn(v, done) {
+    const y0 = heightAt(v.x, v.z), pts = []; let x = v.x + 1.5, z = v.z - 1;
+    for (let i = 0; i <= 9; i++) { const y = y0 + 11 - i * 1.22; pts.push(new THREE.Vector3(x, y, z)); x += (Math.random() - .5) * .9 + (v.x - x) * .25; z += (Math.random() - .5) * .9 + (v.z - z) * .25; }
+    pts[pts.length - 1].set(v.x, y0 + .3, v.z);
+    const bolt = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, .07, 5, false), new THREE.MeshBasicMaterial({ color: 0xfff7d6 }));
+    const glow = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, .25, 6, false), new THREE.MeshBasicMaterial({ color: 0xf3c25a, transparent: true, opacity: .45, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const flash = new THREE.PointLight(0xfff2c0, 6, 22, 2); flash.position.set(v.x, y0 + 3, v.z);
+    island.add(bolt, glow, flash); shake = reduce ? 0 : .5; sfx.thunder();
+    sparkleBurst(new THREE.Vector3(v.x, y0 + .4, v.z), 0xffe08a, 80);
+    let t = 0; done && done();
+    effects.push(dt => { t += dt; const vis = t < .12 || (t > .2 && t < .3); bolt.visible = glow.visible = vis; flash.intensity = Math.max(0, 6 * (1 - t / .5)); if (t > .6) { island.remove(bolt, glow, flash); return false; } return true; });
+  }
+
+  // ---------- game logic ----------
+  function afterChange(v, quiet) {
+    const was = v.owner; v.owner = ownerOf(v);
+    v.label.el.querySelector('i').style.background = CSSC[v.owner];
+    if (was !== v.owner) {
+      v.flag.material.color.setHex(COL[v.owner]);
+      if (!quiet) {
+        cheer(v, 1.6); sparkleBurst(new THREE.Vector3(v.x, heightAt(v.x, v.z) + 1, v.z), COL[v.owner], 110);
+        if (v.owner === ME) { toast(v.name + ' glaubt jetzt an dich!', true); sfx.fanfare(); }
+        else if (was === ME) { toast(v.name + ' hat sich von dir abgewandt.'); sfx.bad(); }
+        else if (v.owner === 'neutral') toast(v.name + ' ist wieder unentschlossen.');
+        else toast(plain(v.name + ' glaubt jetzt an ' + whom(v.owner) + '.'));
+      }
+    }
+    if (selected === v) renderPanel(v);
+  }
+  const ACTIONS = {
+    regen: { name: 'Regen', cost: 15, play: (v, god, done) => { sfx.chime(); rainOn(v, done); } },
+    blitz: { name: 'Blitz', cost: 25, play: (v, god, done) => { lightningOn(v, () => { villagers.forEach(p => { if (p.v === v) p.sp *= 3; }); setTimeout(() => villagers.forEach(p => { if (p.v === v) p.sp /= 3; }), 2500); done(); }); } },
+    prophet: { name: 'Prophet', cost: 10, play: (v, god, done) => { if (god === ME) sfx.tap(); sendProphet(TEMPLES[god], v, COL[god], god, 8, done); } }
+  };
+  function showAmount(v, e) {
+    const at = v.anchor.getWorldPosition(new THREE.Vector3());
+    if (e.amount < 0) floatText('−' + -e.amount, 'für ' + who(e.target_god), at);
+    else floatText('+' + e.amount, e.action === 'blitz' ? 'aus Furcht' : 'für ' + who(e.god), at);
+  }
+
+  // ---------- selection, radial menu, panel ----------
+  let selected = null;
+  const radial = document.getElementById('radial'), sheet = document.getElementById('sheet'), card = document.getElementById('card'), dock = document.getElementById('dock');
+  const ICON = {
+    regen: '<svg viewBox="0 0 24 24" fill="none" stroke="#bfe6ff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 13 a4 4 0 0 1 1-8 a5 5 0 0 1 9 1 a3.5 3.5 0 0 1 1 7 Z"/><path d="M8 17 l-1 3 M12 17 l-1 3 M16 17 l-1 3"/></svg>',
+    blitz: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 L5 14 H11 L9 22 L19 9 H13 Z" fill="#f3c25a"/></svg>',
+    prophet: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff3dc" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="5.5" r="2.6"/><path d="M11 8.5 L6.5 21 H15.5 Z"/><path d="M17.5 7 V21"/><circle cx="17.5" cy="5.5" r="1.4" fill="#f3c25a" stroke="none"/></svg>',
+    close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18"/></svg>'
+  };
+  function buildRadial() {
+    radial.innerHTML = '';
+    ['regen', 'blitz', 'prophet'].forEach((k, i) => {
+      const b = document.createElement('button'); b.className = 'rbtn'; b.id = 'act-' + k; b.dataset.k = k; b.style.animationDelay = (i * .05) + 's';
+      b.innerHTML = ICON[k] + ACTIONS[k].name + '<em>' + ACTIONS[k].cost + ' Glaube</em>';
+      b.addEventListener('click', e => { e.stopPropagation(); doAction(k); });
+      radial.appendChild(b);
+    });
+    refreshRadial();
+  }
+  function refreshRadial() { document.getElementById('radial').querySelectorAll('.rbtn').forEach(b => { b.disabled = faith < ACTIONS[b.dataset.k].cost; }); }
+  function doAction(k) {
+    if (!selected || !game.token) return; const a = ACTIONS[k], v = selected;
+    if (faith < a.cost) { toast('Nicht genug Glaube. Der nächste Punkt kommt in ' + mmss(faithNext || FAITH_TICK) + '.'); return; }
+    setFaith(faith - a.cost);
+    if (k === 'prophet') toast('Dein Prophet macht sich auf den Weg nach ' + v.name + '.');
+    const landed = new Promise(res => a.play(v, ME, res));
+    const call = rpc('cast_wonder', { p_token: game.token, p_action: k, p_village: v.id });
+    game.pending++;
+    Promise.all([landed, call]).then(([, st]) => {
+      const e = st.events.filter(x => x.mine && x.village === v.id && x.action === k).pop();
+      if (e) showAmount(v, e);
+      applyState(st);
+    }).catch(err => { toast(err.message); refresh(); }).finally(() => { game.pending--; });
+  }
+  function renderPanel(v) {
+    const tot = v.bel.gold + v.bel.teal + v.bel.pink + v.bel.neutral, pct = k => (tot ? v.bel[k] / tot * 100 : 0).toFixed(1) + '%';
+    const status = v.owner === 'neutral' ? 'Umkämpft, glaubt an niemanden' : 'Glaubt an ' + whom(v.owner);
+    card.innerHTML = '<div class="card-head"><div><h2 id="card-title">' + v.name + '</h2><p>' + status + ' · ' + tot + ' Bewohner</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+      '<div class="split" aria-label="Glaubensverteilung"><i style="width:' + pct('gold') + ';background:' + CSSC.gold + '"></i><i style="width:' + pct('teal') + ';background:' + CSSC.teal + '"></i><i style="width:' + pct('pink') + ';background:' + CSSC.pink + '"></i><i style="width:' + pct('neutral') + ';background:#5d6478"></i></div>' +
+      '<div class="legend">' + GODS.map(k => '<span style="color:' + CSSC[k] + '">' + who(k) + ' ' + v.bel[k] + '</span>').join('') + '<span style="color:' + CSSC.neutral + '">offen ' + v.bel.neutral + '</span></div>';
+    document.getElementById('card-close').addEventListener('click', deselect);
+  }
+  function select(v) {
+    selected = v; sfx.tap(); controls.autoRotate = false;
+    selRing.visible = true; selRing.position.set(v.x, heightAt(v.x, v.z) + .12, v.z);
+    focus.from.copy(controls.target); focus.to.set(v.x, heightAt(v.x, v.z) + .8, v.z); focus.t = 0;
+    cheer(v, .6); buildRadial(); renderPanel(v); sheet.hidden = false; dock.hidden = true;
+  }
+  function deselect() { selected = null; selRing.visible = false; radial.innerHTML = ''; sheet.hidden = true; dock.hidden = false; focus.from.copy(controls.target); focus.to.set(0, 1, 0); focus.t = 0; }
+  const focus = { from: new THREE.Vector3(), to: new THREE.Vector3(0, 1, 0), t: 1 };
+
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let down = null;
+  canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; ac(); });
+  canvas.addEventListener('pointerup', e => {
+    if (!down) return; const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); down = null; if (moved > 7) return;
+    ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(hitMeshes, false)[0];
+    if (hit) select(hit.object.userData.v); else if (selected) deselect();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (selected) deselect(); else closeSheet(); } });
+
+  // dock sheets
+  function openSheet(html) { card.innerHTML = html; sheet.hidden = false; dock.hidden = true; document.getElementById('card-close').addEventListener('click', closeSheet); }
+  function closeSheet() { if (selected) return deselect(); sheet.hidden = true; dock.hidden = false; }
+  document.getElementById('dock-wunder').addEventListener('click', () => { sfx.tap(); toast('Tippe ein Dorf an, um dort ein Wunder zu wirken.'); });
+  const BUILD_ILL = {
+    tempel: '<svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><polygon points="8,40 26,48 44,40 26,32" fill="#e9e1cc"/><rect x="14" y="22" width="3" height="17" fill="#fff3dc"/><rect x="22" y="24" width="3" height="18" fill="#fff3dc"/><rect x="29" y="24" width="3" height="18" fill="#fff3dc"/><rect x="36" y="22" width="3" height="17" fill="#fff3dc"/><polygon points="10,22 26,10 42,22" fill="#f3c25a"/></svg>',
+    schrein: '<svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><ellipse cx="26" cy="44" rx="14" ry="4" fill="#2e3442"/><rect x="22" y="20" width="8" height="24" fill="#e9e1cc"/><circle cx="26" cy="14" r="6" fill="#fff1c2"/><circle cx="26" cy="14" r="11" fill="#f3c25a" opacity=".3"/></svg>',
+    treppe: '<svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect x="12" y="38" width="28" height="8" fill="#d2c4ab"/><rect x="15" y="30" width="22" height="8" fill="#e5dac6"/><rect x="18" y="22" width="16" height="8" fill="#d2c4ab"/><rect x="21" y="14" width="10" height="8" fill="none" stroke="#f3c25a" stroke-dasharray="2 2"/></svg>'
+  };
+  document.getElementById('dock-bauen').addEventListener('click', () => { sfx.tap(); openSheet(
+    '<div class="card-head"><div><h2 id="card-title">Bauen</h2><p>Kommt mit Version 0.3: Deine Gläubigen bauen mit ihren Opfergaben.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+    '<div class="row"><div class="ill">' + BUILD_ILL.tempel + '</div><div class="tx"><span class="t">Tempel II</span><span class="d">Stärkere Wunder, mehr Einfluss</span><div class="chips"><span class="chip">8 Stein</span><span class="chip">4 Holz</span></div></div><button class="gold-btn" disabled>Bauen</button></div>' +
+    '<div class="row"><div class="ill">' + BUILD_ILL.schrein + '</div><div class="tx"><span class="t">Schrein</span><span class="d">Dein Einfluss reicht ein Dorf weiter</span><div class="chips"><span class="chip">4 Holz</span><span class="chip">2 Stein</span></div></div><button class="gold-btn" disabled>Bauen</button></div>' +
+    '<div class="row"><div class="ill">' + BUILD_ILL.treppe + '</div><div class="tx"><span class="t">Himmelstreppe</span><span class="d">Wer Stufe 7 erreicht, gewinnt</span><div class="chips"><span class="chip">10 Stein</span><span class="chip">10 Holz</span></div></div><button class="gold-btn" disabled>Bauen</button></div>'); });
+  document.getElementById('dock-goetter').addEventListener('click', () => { sfx.tap(); openGods(); });
+  function openGods() {
+    const tot = {}; GODS.forEach(k => tot[k] = 0); VILLAGES.forEach(v => GODS.forEach(k => tot[k] += v.bel[k]));
+    const list = GODS.filter(k => PLAYERS[k]).sort((a, b) => tot[b] - tot[a]), max = Math.max(1, ...list.map(k => tot[k]));
+    const free = GODS.length - list.length;
+    openSheet('<div class="card-head"><div><h2 id="card-title">Götter</h2><p>Wer die meisten Gläubigen hat, führt. Die Himmelstreppe kommt mit Version 0.3.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+      list.map((k, i) => '<div class="rank"><span class="pos">' + (i + 1) + '</span><div class="who"><span>' + (k === ME ? 'Du' : esc(PLAYERS[k])) + ' · ' + GOD_LONG[k] + '</span><div class="mini"><i style="width:' + (tot[k] / max * 100) + '%;background:' + CSSC[k] + '"></i></div></div><span style="font-variant-numeric:tabular-nums">' + tot[k] + '</span></div>').join('') +
+      (free ? '<div class="invite"><span>Spielcode <b>' + esc(game.code) + '</b><br>' + free + (free === 1 ? ' Gott ist' : ' Götter sind') + ' noch frei</span><button class="gold-btn" id="invite-btn">Einladen</button></div>' : '') +
+      '<h3 class="sec">Chronik</h3>' + chronicle(game.events.slice(-15).reverse()) +
+      '<button class="linkish" id="new-game">Weiteres Spiel erstellen oder beitreten</button>');
+    const ib = document.getElementById('invite-btn'); if (ib) ib.addEventListener('click', invite);
+    document.getElementById('new-game').addEventListener('click', () => { closeSheet(); showLobby('create'); });
+  }
+
+  // ---------- sizing ----------
+  function resize() {
+    const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+    camera.fov = w / h < .8 ? 50 : 40; camera.updateProjectionMatrix();
+    if (!resize.done) { const k = w / h < .8 ? 1.35 : 1; camera.position.set(17 * k, 14 * k, 19 * k); resize.done = true; }
+  }
+  addEventListener('resize', resize); resize();
+
+  // ---------- loop ----------
+  const clock = new THREE.Clock(), wp = new THREE.Vector3(), tv = new THREE.Vector3(), basePos = new THREE.Vector3();
+  function frame() {
+    const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime, sp = reduce ? .3 : 1;
+    island.position.y = Math.sin(t * .45 * sp) * .2;
+    islets.forEach(g => { g.position.y += Math.sin(t * .6 + g.userData.ph) * .005 * sp; g.rotation.y += .0015 * sp; });
+    clouds.rotation.y += .0004 * sp;
+    if (LOOKS[look].flashes && !reduce) {
+      flashT -= dt; if (flashT <= 0) { flashV = 1; flashT = 6 + Math.random() * 8; if (actx && !muted) setTimeout(() => noise(1.8, .18, 300), 500); }
+      if (flashV > 0) { flashV = Math.max(0, flashV - dt * 3.2); const f = flashV * (flashV > .55 || flashV < .3 ? 1 : .35); sky.material.uniforms.flash.value = f * .6; hemi.intensity = hemi.userData.base + f * .9; }
+    }
+    fallTex.offset.y -= dt * 1.1 * sp;
+    Object.values(godObjs).forEach(o => { o.av.userData.anim(t * sp); o.holder.lookAt(camera.position.x, o.holder.getWorldPosition(tv).y, camera.position.z); o.tp.orb.rotation.y += dt; o.tp.shaft.material.opacity = .09 + Math.sin(t * 1.5) * .04; });
+    flags.forEach(f => { const p = f.mesh.geometry.attributes.position, b = f.base; for (let i = 0; i < p.count; i++) { const x = b[i * 3]; p.array[i * 3 + 2] = Math.sin(x * 9 - t * f.speed * 2) * .06 * (x / .56); } p.needsUpdate = true; });
+    villagers.forEach(p => {
+      p.a += p.sp * dt; const x = p.v.x + Math.cos(p.a) * p.r, z = p.v.z + Math.sin(p.a) * p.r;
+      let y = heightAt(x, z) + .02 + Math.abs(Math.sin(t * 8 + p.ph)) * .008;
+      if (p.jump > 0) { y += Math.abs(Math.sin(t * 10 + p.ph)) * .14 * Math.min(1, p.jump); p.jump -= dt * .6; }
+      p.obj.position.set(x, y, z); p.obj.rotation.y = -p.a - (p.sp > 0 ? 0 : Math.PI);
+    });
+    if (selRing.visible) { const s = 1 + Math.sin(t * 4) * .04; selRing.scale.set(s, s, 1); }
+    // walkers
+    for (let i = walkers.length - 1; i >= 0; i--) {
+      const w = walkers[i]; w.t += dt / w.dur; const k = Math.min(1, w.t);
+      w.curve.getPointAt(k, tv); const ahead = w.curve.getPointAt(Math.min(1, k + .01));
+      w.p.position.set(tv.x, heightAt(tv.x, tv.z) + Math.abs(Math.sin(t * 7)) * .06, tv.z); w.p.lookAt(ahead.x, w.p.position.y, ahead.z);
+      if (k >= 1) {
+        const v = w.toV; sparkleBurst(new THREE.Vector3(v.x, heightAt(v.x, v.z) + .6, v.z), COL[w.owner], 50); cheer(v, 1); if (w.owner === ME) sfx.chime();
+        island.remove(w.p); w.lbl.el.remove(); labels.splice(labels.indexOf(w.lbl), 1); walkers.splice(i, 1); w.onArrive && w.onArrive();
+      }
+    }
+    for (let i = effects.length - 1; i >= 0; i--) if (!effects[i](dt)) effects.splice(i, 1);
+    // camera focus
+    if (focus.t < 1) { focus.t = Math.min(1, focus.t + dt * 1.6); const e = 1 - Math.pow(1 - focus.t, 3); const nt = focus.from.clone().lerp(focus.to, e); const delta = nt.clone().sub(controls.target); controls.target.copy(nt); camera.position.add(delta); }
+    controls.update();
+    basePos.copy(camera.position);
+    if (shake > 0) { camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; shake = Math.max(0, shake - dt * 1.4); }
+    renderer.render(scene, camera);
+    camera.position.copy(basePos);
+    // HTML overlays
+    const w = innerWidth, h = innerHeight;
+    labels.forEach(l => { l.obj.getWorldPosition(wp); wp.y += l.dy; wp.project(camera); if (wp.z > 1 || Math.abs(wp.x) > 1.1 || Math.abs(wp.y) > 1.1) { l.el.style.display = 'none'; return; } l.el.style.display = ''; l.el.style.transform = 'translate(' + ((wp.x * .5 + .5) * w).toFixed(1) + 'px,' + ((-wp.y * .5 + .5) * h).toFixed(1) + 'px) translate(-50%,-100%)'; });
+    for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.t += dt; wp.copy(f.pos); wp.y += f.t * 1.2; wp.project(camera); f.el.style.transform = 'translate(' + ((wp.x * .5 + .5) * w).toFixed(1) + 'px,' + ((-wp.y * .5 + .5) * h).toFixed(1) + 'px) translate(-50%,-100%) scale(' + (1 + Math.max(0, .3 - f.t) * 1.5).toFixed(2) + ')'; f.el.style.opacity = Math.max(0, 1 - Math.max(0, f.t - 1.1) / .6); if (f.t > 1.7) { f.el.remove(); floats.splice(i, 1); } }
+    if (selected && radial.children.length) {
+      selected.anchor.getWorldPosition(wp); wp.project(camera); const sx = (wp.x * .5 + .5) * w, sy = (-wp.y * .5 + .5) * h;
+      const angles = [-150, -90, -30];
+      [...radial.children].forEach((b, i) => { const a = angles[i] * Math.PI / 180, r = 84; let x = sx + Math.cos(a) * r, y = sy + Math.sin(a) * r - 20; x = Math.max(40, Math.min(w - 40, x)); y = Math.max(110, Math.min(h - 260, y)); b.style.left = x + 'px'; b.style.top = y + 'px'; });
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+  // ---------- Spielstand (Supabase) ----------
+  const SB_URL = 'https://txtduemylfrhpfklnntg.supabase.co', SB_KEY = 'sb_publishable_vn3LV4Kk2bm3vn-xkXbAgA_AumkhaaP';
+  const game = { code: null, token: null, events: [], lastEvent: 0, latest: null, pending: 0, live: null, started: false };
+  const VBYID = {}; VILLAGES.forEach(v => VBYID[v.id] = v);
+  async function rpc(fn, args, keepalive) {
+    let r;
+    try { r = await fetch(SB_URL + '/rest/v1/rpc/' + fn, { method: 'POST', keepalive: !!keepalive, headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(args) }); }
+    catch (e) { throw new Error('Keine Verbindung zu den Göttern. Bitte später noch einmal versuchen.'); }
+    const j = r.status === 204 ? null : await r.json().catch(() => null);
+    if (!r.ok) throw new Error((j && j.message) || 'Der Himmel schweigt (' + r.status + ').');
+    return j;
+  }
+  const saved = {
+    all() { try { return JSON.parse(localStorage.getItem('gw-spiele') || '{}'); } catch (e) { return {}; } },
+    put(code, token) { const s = saved.all(); if (token) s[code] = token; else delete s[code]; try { localStorage.setItem('gw-spiele', JSON.stringify(s)); if (token) localStorage.setItem('gw-letztes', code); } catch (e) {} },
+    last() { try { return localStorage.getItem('gw-letztes'); } catch (e) { return null; } }
+  };
+
+  const MEDAL = {
+    gold: ['#c9a04a', '#7a5a1e', '<path d="M13 2 L5 14 H11 L9 22 L19 9 H13 Z" fill="#5a3608"/>'],
+    teal: ['#6fd394', '#1f6b3a', '<path d="M12 22 V10" stroke="#0e3a1e" stroke-width="2"/><path d="M12 11 C7 11 5 7 5 3 C10 3 12 7 12 11 Z M12 15 C17 15 19 11 19 7 C14 7 12 11 12 15 Z" fill="#0e3a1e"/>'],
+    pink: ['#e2475a', '#6e1622', '<path d="M4 3 C4 10 8 14 12 14 C16 14 20 10 20 3 C18 8 15 11 12 11 C9 11 6 8 4 3 Z" fill="#3a0a12"/><path d="M12 14 L10 18 L13 19 L11 22" stroke="#3a0a12" stroke-width="1.8" fill="none"/>']
+  };
+  function eventText(e) {
+    const n = who(e.god), vn = e.village && VBYID[e.village] ? VBYID[e.village].name : '';
+    if (e.action === 'join') return n + (e.god === ME ? ' trittst' : ' tritt') + ' als ' + GOD_LONG[e.god] + ' an.';
+    if (e.action === 'regen') return n + ': Regen über ' + vn + ', +' + e.amount + ' Gläubige';
+    if (e.action === 'prophet') return n + ': Prophet in ' + vn + ', +' + e.amount + ' Gläubige';
+    if (e.action === 'blitz') return e.target_god ? n + ': Blitz auf ' + vn + ', ' + (e.target_god === ME ? 'du verlierst ' : who(e.target_god) + ' verliert ') + -e.amount : n + ': Blitz auf ' + vn + ', +' + e.amount + ' aus Furcht';
+    return '';
+  }
+  function ago(ts) {
+    const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000);
+    if (s < 60) return 'gerade'; if (s < 3600) return Math.floor(s / 60) + ' min'; if (s < 86400) return Math.floor(s / 3600) + ' Std'; return Math.floor(s / 86400) + ' T';
+  }
+  function chronicle(list) {
+    if (!list.length) return '<div class="chron"><div>Noch ist nichts geschehen.</div></div>';
+    return '<div class="chron">' + list.map(e => '<div><i style="background:' + CSSC[e.god] + '"></i><span>' + eventText(e) + '</span><time>' + ago(e.created_at) + '</time></div>').join('') + '</div>';
+  }
+
+  function applyPlayers(st) {
+    GODS.forEach(k => delete PLAYERS[k]); (st.players || []).forEach(p => PLAYERS[p.god] = p.name);
+    ME = st.me.god;
+    const m = MEDAL[ME], medal = document.getElementById('medal');
+    medal.style.background = 'radial-gradient(circle at 40% 35%, ' + m[0] + ', ' + m[1] + ' 70%)';
+    medal.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24">' + m[2] + '</svg>';
+    document.getElementById('god-name').textContent = GOD_LONG[ME];
+    GODS.forEach(k => godObjs[k].label.el.innerHTML = '<i style="background:' + CSSC[k] + '"></i>' + (k === ME ? 'Du' : PLAYERS[k] ? esc(PLAYERS[k]) : 'frei') + ' · ' + GOD[k]);
+  }
+  function applyVillages(st, quiet) {
+    (st.villages || []).forEach(sv => { const v = VBYID[sv.id]; if (!v) return; GODS.concat('neutral').forEach(k => v.bel[k] = sv[k]); afterChange(v, quiet); });
+    paintTerritories();
+  }
+  // Übernimmt einen Spielstand vom Server. Fremde Wunder werden erst abgespielt, dann sichtbar.
+  function applyState(st) {
+    game.latest = st; game.events = st.events || [];
+    applyPlayers(st);
+    setFaith(st.me.faith); faithNext = st.me.next_in;
+    const fresh = game.events.filter(e => e.id > game.lastEvent);
+    game.lastEvent = game.events.reduce((m, e) => Math.max(m, e.id), game.lastEvent);
+    if (!game.started) { applyVillages(st, true); return; }
+    const foreign = fresh.filter(e => !e.mine);
+    let wait = 0;
+    foreign.forEach(e => {
+      toast(plain(eventText(e)));
+      const v = VBYID[e.village], a = ACTIONS[e.action];
+      if (!v || !a) return;
+      wait = Math.max(wait, e.action === 'prophet' ? 8.2 : 1.7);
+      a.play(v, e.god, () => showAmount(v, e));
+    });
+    if (wait) setTimeout(() => applyVillages(game.latest), wait * 1000); else applyVillages(st);
+  }
+  let refreshing = null;
+  function refresh() {
+    if (!game.token || refreshing) return refreshing;
+    refreshing = rpc('get_state', { p_token: game.token }).then(st => { if (!game.pending) applyState(st); }).catch(() => {}).finally(() => { refreshing = null; });
+    return refreshing;
+  }
+  function connectLive() {
+    if (game.live || !game.code || !window.supabase) return;
+    try {
+      const client = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+      game.live = client.channel('spiel-' + game.code).on('broadcast', { event: 'event' }, () => refresh()).subscribe();
+    } catch (e) { game.live = null; }
+  }
+  const sbjs = document.getElementById('sbjs'); if (sbjs) sbjs.addEventListener('load', connectLive);
+  setInterval(() => { if (!document.hidden) refresh(); }, 30000);
+  document.addEventListener('visibilitychange', () => {
+    if (!game.token) return;
+    if (document.hidden) rpc('mark_seen', { p_token: game.token }, true).catch(() => {}); else refresh();
+  });
+
+  async function startGame(code, token) {
+    const st = await rpc('get_state', { p_token: token });
+    game.code = st.code; game.token = token; game.started = false; game.lastEvent = 0;
+    if (game.live) { try { game.live.unsubscribe(); } catch (e) {} game.live = null; }
+    saved.put(game.code, token);
+    try { const u = new URL(location.href); u.searchParams.set('spiel', game.code); history.replaceState(null, '', u); } catch (e) {}
+    applyState(st); game.started = true;
+    document.getElementById('lobby').hidden = true;
+    connectLive();
+    const missed = game.events.filter(e => !e.mine && new Date(e.created_at) > new Date(st.me.seen_at));
+    if (missed.length) openSheet('<div class="card-head"><div><h2 id="card-title">Seit deinem letzten Besuch</h2><p>Das haben die anderen Götter getan.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' + chronicle(missed.reverse()));
+    else setTimeout(() => toast('Tippe ein Dorf an, um ein Wunder zu wirken.'), 800);
+    rpc('mark_seen', { p_token: token }).catch(() => {});
+  }
+  async function invite() {
+    const url = location.href.split('#')[0], text = 'Tritt meinem Götterwettstreit bei! Spielcode: ' + game.code;
+    try { if (navigator.share) { await navigator.share({ title: 'Götterwettstreit', text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text + '\n' + url); toast('Einladung kopiert.'); } catch (e) { toast('Spielcode: ' + game.code); }
+  }
+
+  // ---------- Beitrittsbildschirm ----------
+  const lobby = { el: document.getElementById('lobby'), mode: 'create', code: null, god: null, taken: {} };
+  const lb = id => document.getElementById(id);
+  function renderGods() {
+    lb('lobby-gods').innerHTML = GODS.map(k => '<button type="button" class="gpick" data-god="' + k + '" aria-pressed="' + (lobby.god === k) + '"' + (lobby.taken[k] ? ' disabled' : '') + '><i style="background:' + CSSC[k] + '"></i>' + GOD_LONG[k] + (lobby.taken[k] ? '<small>' + esc(lobby.taken[k]) + '</small>' : '') + '</button>').join('');
+    lb('lobby-gods').querySelectorAll('.gpick').forEach(b => b.addEventListener('click', () => { lobby.god = b.dataset.god; sfx.tap(); renderGods(); }));
+  }
+  async function showLobby(mode, code) {
+    lobby.mode = mode; lobby.code = code || null; lobby.taken = {}; lb('lobby-err').textContent = '';
+    lb('lobby-sub').textContent = mode === 'join' ? 'Spiel ' + code + ' · wähle deinen Gott' : 'Ein neues Spiel für dich und deine Freunde';
+    lb('lobby-go').textContent = mode === 'join' ? 'Beitreten' : 'Spiel erstellen';
+    lb('lobby-alt').hidden = mode === 'join'; lb('lobby-new').hidden = mode !== 'join';
+    lobby.el.hidden = false; sheet.hidden = true; dock.hidden = true;
+    if (mode === 'join') {
+      try {
+        const info = await rpc('game_lobby', { p_code: code });
+        if (!info) { showLobby('create'); lb('lobby-err').textContent = 'Spiel ' + code + ' gibt es nicht.'; return; }
+        info.players.forEach(p => lobby.taken[p.god] = p.name);
+        if (GODS.every(k => lobby.taken[k])) lb('lobby-err').textContent = 'Alle drei Götter sind schon vergeben.';
+      } catch (e) { lb('lobby-err').textContent = e.message; }
+    }
+    if (!lobby.god || lobby.taken[lobby.god]) lobby.god = GODS.find(k => !lobby.taken[k]) || null;
+    renderGods();
+  }
+  // Bewusst kein <form>-Submit: eingebettete Vorschauen sperren Formulare oft stillschweigend.
+  lb('lobby-name').addEventListener('keydown', e => { if (e.key === 'Enter') lb('lobby-go').click(); });
+  lb('lobby-go').addEventListener('click', async () => {
+    ac();
+    const name = lb('lobby-name').value.trim();
+    if (!name) { lb('lobby-err').textContent = 'Wie sollen dich die Sterblichen nennen?'; return; }
+    if (!lobby.god) { lb('lobby-err').textContent = 'Wähle einen freien Gott.'; return; }
+    lb('lobby-go').disabled = true; lb('lobby-err').textContent = '';
+    try {
+      const r = lobby.mode === 'join' ? await rpc('join_game', { p_code: lobby.code, p_name: name, p_god: lobby.god }) : await rpc('create_game', { p_name: name, p_god: lobby.god });
+      try { localStorage.setItem('gw-name', name); } catch (err) {}
+      await startGame(r.code, r.token); sfx.fanfare();
+      if (lobby.mode === 'create') setTimeout(() => toast('Lade deine Freunde unter „Götter“ ein. Spielcode: ' + r.code, true), 600);
+    } catch (err) { lb('lobby-err').textContent = err.message; if (lobby.mode === 'join') showLobby('join', lobby.code); }
+    finally { lb('lobby-go').disabled = false; }
+  });
+  lb('lobby-codebtn').addEventListener('click', () => { const c = lb('lobby-code').value.trim().toUpperCase(); if (c.length !== 5) { lb('lobby-err').textContent = 'Der Code hat fünf Zeichen.'; return; } const t = saved.all()[c]; if (t) startGame(c, t).catch(() => showLobby('join', c)); else showLobby('join', c); });
+  lb('lobby-new').addEventListener('click', () => showLobby('create'));
+  try { lb('lobby-name').value = localStorage.getItem('gw-name') || ''; } catch (e) {}
+
+  (async function boot() {
+    let code = null; try { code = (new URLSearchParams(location.search).get('spiel') || '').toUpperCase() || null; } catch (e) {}
+    const all = saved.all();
+    if (!code) code = saved.last();
+    if (code && all[code]) {
+      try { await startGame(code, all[code]); return; }
+      catch (e) { if (/Unbekannter Spieler/.test(e.message)) saved.put(code, null); else { toast(e.message); } }
+    }
+    const urlCode = (() => { try { return new URLSearchParams(location.search).get('spiel'); } catch (e) { return null; } })();
+    if (urlCode) showLobby('join', urlCode.toUpperCase()); else showLobby('create');
+  })();
+})();
+</script>
