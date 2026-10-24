@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1a33">
-<title>Götterwettstreit 0.3</title>
+<title>Götterwettstreit 0.3.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@700;800;900&display=swap">
 <style>
@@ -54,6 +54,11 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .gifts { display: flex; align-items: center; gap: 5px; background: var(--panel); border: 1px solid var(--edge); border-radius: 999px; padding: 4px 11px 4px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
 .gifts svg { width: 18px; height: 18px; }
 .gifts small { font-size: 10.5px; color: var(--muted); font-weight: 800; }
+.left { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.tally { display: flex; align-items: center; gap: 5px; background: var(--panel); border: 1px solid var(--edge); border-radius: 999px; padding: 4px 11px 4px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.tally svg { width: 18px; height: 18px; }
+.tally small { font-size: 10.5px; color: var(--muted); font-weight: 800; }
+.tally small + svg { margin-left: 5px; }
 .mute { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); background: var(--panel); color: var(--cream); display: grid; place-items: center; cursor: pointer; }
 
 .pill-btn { appearance: none; border: 0; min-height: 36px; padding: 0 14px; border-radius: 999px; font: 900 12.5px var(--body); cursor: pointer; background: linear-gradient(#a6f0bd, #6fcf8e); color: #0e2a18; box-shadow: 0 3px 0 #2f7a48; }
@@ -159,12 +164,15 @@ h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: v
 <div class="fallback" id="fallback" hidden>Die 3D-Ansicht konnte nicht geladen werden. Bitte die Seite neu laden.</div>
 
 <div class="hud">
+  <div class="left">
   <div class="god">
     <div class="medal" id="medal" aria-hidden="true"></div>
     <div>
       <div class="nm" id="god-name">&nbsp;</div>
       <div class="faith" aria-label="Glaube"><div class="bar"><i id="faith-bar"></i></div><span id="faith-num">0</span></div>
     </div>
+  </div>
+    <div class="tally" id="tally" aria-label="Deine Dörfer und Gläubigen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 V11 L12 5 L20 11 V20 Z" fill="#c98a3a"/><path d="M3 11.5 L12 4.5 L21 11.5" fill="none" stroke="#f3c25a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="10" y="14" width="4" height="6" fill="#3a2408"/></svg><span id="tally-v">0</span><small id="tally-vl">Dörfer</small><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2" fill="#f3c25a"/><path d="M5.5 20 C6 14.5 8.5 12 12 12 C15.5 12 18 14.5 18.5 20 Z" fill="#c98a3a"/></svg><span id="tally-b">0</span><small>Gläubige</small></div>
   </div>
   <div class="right">
     <div style="display:flex;gap:6px">
@@ -218,7 +226,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.3 · Stand 3';
+  const BUILD = 'Version 0.3.1 · Stand 1';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -1097,7 +1105,12 @@ document.addEventListener('touchmove', e => {
   }
   function applyVillages(st, quiet) {
     (st.villages || []).forEach(sv => { const v = VBYID[sv.id]; if (!v) return; GODS.concat('neutral').forEach(k => v.bel[k] = sv[k]); v.hasShrine = !!sv.shrine; v.shrine.g.visible = v.hasShrine; afterChange(v, quiet); });
-    paintTerritories();
+    paintTerritories(); paintTally();
+  }
+  function paintTally() {
+    const n = VILLAGES.filter(v => v.owner === ME).length;
+    document.getElementById('tally-v').textContent = n; document.getElementById('tally-vl').textContent = n === 1 ? 'Dorf' : 'Dörfer';
+    document.getElementById('tally-b').textContent = VILLAGES.reduce((a, v) => a + v.bel[ME], 0);
   }
   // Übernimmt einen Spielstand vom Server. Fremde Wunder werden erst abgespielt, dann sichtbar.
   function applyState(st) {
