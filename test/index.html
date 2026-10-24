@@ -100,6 +100,8 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .row .ill > svg { width: 34px; height: 34px; }
 .vbtn { appearance: none; display: flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 13px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); color: var(--cream); font: 800 13px var(--body); cursor: pointer; }
 .vbtn i { width: 8px; height: 8px; border-radius: 50%; }
+.vbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.buildin { font-size: 12px; font-weight: 800; color: var(--muted); }
 .vbtn:active { background: rgba(243, 194, 90, 0.16); }
 .chip.info { background: rgba(243, 194, 90, 0.14); color: var(--gold); }
 .chips .pill-btn { min-height: 32px; padding: 0 11px; font-size: 12px; }
@@ -216,7 +218,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.3 · Stand 2';
+  const BUILD = 'Version 0.3 · Stand 3';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -955,8 +957,9 @@ document.addEventListener('touchmove', e => {
         (n < STAIR_MAX ? '<div class="chips"><span class="chip info">Stufe ' + n + ' von 7</span><span class="chip' + (gifts < cost ? ' miss' : '') + '">' + cost + ' Gaben</span>' + (needTwo ? '<span class="chip miss">zweites Dorf fehlt</span>' : '') + '</div>' : '') + '</div>' +
         (n < STAIR_MAX ? '<button class="gold-btn" id="stair-btn"' + (gifts < cost || needTwo || ended() ? ' disabled' : '') + '>Stufe ' + (n + 1) + '</button>' : '') + '</div>' +
       '<div class="row"><div class="ill">' + BUILD_ILL.schrein + '</div><div class="tx"><span class="t">Schrein</span><span class="d">In einem deiner Dörfer: +1 Gabe pro Stunde, ein Blitz nimmt dort nur 3 Gläubige. Der Schrein bleibt beim Dorf, auch wenn es den Gott wechselt.</span>' +
-        '<div class="chips"><span class="chip' + (gifts < SHRINE_COST ? ' miss' : '') + '">' + SHRINE_COST + ' Gaben</span>' + free.map(v => '<button class="pill-btn" data-shrine="' + v.id + '"' + (gifts < SHRINE_COST || ended() ? ' disabled' : '') + '>' + v.name + '</button>').join('') +
-        (!free.length ? '<span class="chip info">' + (mine.length ? 'Alle deine Dörfer haben einen' : 'Erst ein Dorf gewinnen') + '</span>' : '') + '</div></div></div>');
+        '<div class="chips"><span class="chip' + (gifts < SHRINE_COST ? ' miss' : '') + '">' + SHRINE_COST + ' Gaben</span>' +
+        (!free.length ? '<span class="chip info">' + (mine.length ? 'Alle deine Dörfer haben einen' : 'Erst ein Dorf gewinnen') + '</span>' : '') + '</div>' +
+        (free.length ? '<div class="chips"><span class="buildin">Bauen in</span>' + free.map(v => '<button class="vbtn" data-shrine="' + v.id + '"' + (gifts < SHRINE_COST || ended() ? ' disabled' : '') + '><i style="background:' + CSSC[ME] + '"></i>' + v.name + '</button>').join('') + '</div>' : '') + '</div></div>');
     const sb = document.getElementById('stair-btn'); if (sb) sb.addEventListener('click', () => doBuild('stufe'));
     card.querySelectorAll('[data-shrine]').forEach(b => b.addEventListener('click', () => doBuild('schrein', VBYID[b.dataset.shrine])));
   }
