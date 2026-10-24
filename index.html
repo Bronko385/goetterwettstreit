@@ -226,7 +226,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.3.1 · Stand 1';
+  const BUILD = 'Version 0.3.1 · Stand 2';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -1205,7 +1205,7 @@ document.addEventListener('touchmove', e => {
     const mine = Object.keys(saved.all()).filter(c => c !== game.code), info = saved.info();
     lb('lobby-games').hidden = !mine.length;
     lb('lobby-games').innerHTML = mine.length ? '<span class="mytitle">Deine anderen Spiele auf diesem Gerät</span>' + mine.map(c => '<button type="button" class="gpick" data-code="' + esc(c) + '"><b>' + esc(c) + '</b><small>' + esc(info[c] || '') + '</small></button>').join('') : '';
-    lb('lobby-games').querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => { const c = b.dataset.code; sfx.tap(); startGame(c, saved.all()[c]).catch(err => { lb('lobby-err').textContent = err.message; }); }));
+    lb('lobby-games').querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => { const c = b.dataset.code; sfx.tap(); startGame(c, saved.all()[c]).catch(err => { if (/Unbekannter Spieler/.test(err.message)) { saved.put(c, null); showLobby(lobby.mode, lobby.code); lb('lobby-err').textContent = 'Spiel ' + c + ' gibt es nicht mehr.'; } else lb('lobby-err').textContent = err.message; }); }));
     if (mode === 'join') {
       try {
         const info = await rpc('game_lobby', { p_code: code });
@@ -1233,7 +1233,7 @@ document.addEventListener('touchmove', e => {
     } catch (err) { lb('lobby-err').textContent = err.message; if (lobby.mode === 'join') showLobby('join', lobby.code); }
     finally { lb('lobby-go').disabled = false; }
   });
-  lb('lobby-codebtn').addEventListener('click', () => { const c = lb('lobby-code').value.trim().toUpperCase(); if (c.length !== 5) { lb('lobby-err').textContent = 'Der Code hat fünf Zeichen.'; return; } const t = saved.all()[c]; if (t) startGame(c, t).catch(() => showLobby('join', c)); else showLobby('join', c); });
+  lb('lobby-codebtn').addEventListener('click', () => { const c = lb('lobby-code').value.trim().toUpperCase(); if (c.length !== 5) { lb('lobby-err').textContent = 'Der Code hat fünf Zeichen.'; return; } const t = saved.all()[c]; if (t) startGame(c, t).catch(err => { if (/Unbekannter Spieler/.test(err.message)) saved.put(c, null); showLobby('join', c); }); else showLobby('join', c); });
   lb('lobby-new').addEventListener('click', () => showLobby('create'));
   lb('lobby-back').addEventListener('click', () => { lobby.el.hidden = true; dock.hidden = false; });
   try { lb('lobby-name').value = localStorage.getItem('gw-name') || ''; } catch (e) {}
