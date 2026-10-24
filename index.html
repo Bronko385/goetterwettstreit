@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1a33">
-<title>Götterwettstreit 0.2</title>
+<title>Götterwettstreit 0.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@700;800;900&display=swap">
 <style>
@@ -51,6 +51,9 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .res { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--edge); border-radius: 999px; padding: 5px 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); }
 .res span { display: flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; padding: 0 3px; }
+.gifts { display: flex; align-items: center; gap: 5px; background: var(--panel); border: 1px solid var(--edge); border-radius: 999px; padding: 4px 11px 4px 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.gifts svg { width: 18px; height: 18px; }
+.gifts small { font-size: 10.5px; color: var(--muted); font-weight: 800; }
 .mute { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--edge); background: var(--panel); color: var(--cream); display: grid; place-items: center; cursor: pointer; }
 
 .pill-btn { appearance: none; border: 0; min-height: 36px; padding: 0 14px; border-radius: 999px; font: 900 12.5px var(--body); cursor: pointer; background: linear-gradient(#a6f0bd, #6fcf8e); color: #0e2a18; box-shadow: 0 3px 0 #2f7a48; }
@@ -91,8 +94,20 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .row .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .row .t { font-family: var(--display); font-weight: 900; font-size: 14.5px; }
 .row .d { font-size: 12px; color: var(--muted); font-weight: 700; line-height: 1.35; }
-.chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
 .chip { font-size: 11.5px; font-weight: 900; padding: 2px 8px; border-radius: 8px; background: rgba(143, 227, 166, 0.14); color: var(--good); }
+.chip { white-space: nowrap; }
+.row .ill > svg { width: 34px; height: 34px; }
+.vbtn { appearance: none; display: flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 13px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); color: var(--cream); font: 800 13px var(--body); cursor: pointer; }
+.vbtn i { width: 8px; height: 8px; border-radius: 50%; }
+.vbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.buildin { font-size: 12px; font-weight: 800; color: var(--muted); }
+.vbtn:active { background: rgba(243, 194, 90, 0.16); }
+.chip.info { background: rgba(243, 194, 90, 0.14); color: var(--gold); }
+.chips .pill-btn { min-height: 32px; padding: 0 11px; font-size: 12px; }
+.win { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; padding: 6px 0 2px; }
+.win h2 { margin: 0; font-family: var(--display); font-size: 22px; color: var(--gold); }
+.win p { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
 .chip.miss { background: rgba(255, 107, 90, 0.14); color: #ffab9e; }
 .gold-btn { appearance: none; border: 0; min-height: 44px; padding: 0 16px; border-radius: 13px; font: 900 13.5px var(--body); cursor: pointer; color: #3a2408; background: linear-gradient(#ffe08a, #e9a43a); box-shadow: 0 4px 0 #8a5a14; flex-shrink: 0; }
 .gold-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a5a14; }
@@ -133,7 +148,7 @@ button, input { touch-action: manipulation; }
 .invite .gold-btn { margin-left: auto; min-height: 38px; }
 h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: var(--cream); }
 .fallback { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-size: 14px; color: var(--cream); background: #0f1a33; }
-@media (max-width: 380px) { .faith .bar { width: 70px; } .god .nm { font-size: 13px; } }
+@media (max-width: 380px) { .faith .bar { width: 70px; } .god .nm { font-size: 13px; } .row { gap: 9px; padding: 9px; } .row .ill { width: 46px; height: 46px; border-radius: 12px; } .row .ill svg { width: 40px; height: 40px; } .row .gold-btn { padding: 0 12px; } }
 @media (prefers-reduced-motion: reduce) { .rbtn, .card, .toast { animation: none; } }
 </style>
 </head>
@@ -156,6 +171,7 @@ h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: v
     <button class="mute" id="look" aria-label="Stimmung wechseln"><svg id="look-storm" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 15 a4.5 4.5 0 0 1 .5-9 a5.5 5.5 0 0 1 10.3 2 A3.8 3.8 0 0 1 17.5 15"/><path d="M12.5 12 L10 16.5 H13 L11 21" stroke="#f2b632"/></svg><svg id="look-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2b632" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="display:none"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5 V5 M12 19 V21.5 M2.5 12 H5 M19 12 H21.5 M5.3 5.3 L7 7 M17 17 L18.7 18.7 M5.3 18.7 L7 17 M17 7 L18.7 5.3"/></svg></button>
     <button class="mute" id="mute" aria-label="Ton ausschalten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 9 H8 L13 5 V19 L8 15 H4 Z"/><path id="mute-wave" d="M16 9 C17.5 10.5 17.5 13.5 16 15 M19 6.5 C22 9.5 22 14.5 19 17.5" stroke-linecap="round"/></svg></button>
     </div>
+    <div class="gifts" id="gifts" aria-label="Opfergaben"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9 H17 L15.5 20 H8.5 Z" fill="#c98a3a"/><path d="M6 9 H18" stroke="#f3c25a" stroke-width="2" stroke-linecap="round"/><path d="M9 9 C9 6 10.5 4 12 4 C13.5 4 15 6 15 9" fill="none" stroke="#8fe3a6" stroke-width="1.8"/></svg><span id="gift-num">0</span><small>Gaben</small></div>
   </div>
 </div>
 
@@ -202,7 +218,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.2 · Stand 5';
+  const BUILD = 'Version 0.3 · Stand 3';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -451,6 +467,16 @@ document.addEventListener('touchmove', e => {
     const flag = new THREE.Mesh(flagGeo, flagMat); flag.position.set(v.x - .73, y0 + 1.32, v.z + .55); flag.castShadow = true; g.add(flag);
     flags.push({ mesh: flag, base: flagGeo.attributes.position.array.slice(), speed: 3, v });
     v.flag = flag;
+    // Schrein: erscheint, sobald jemand ihn baut; die Flamme brennt in der Farbe des Dorfbesitzers
+    const sh = new THREE.Group(), sy = heightAt(v.x - .38, v.z - .62);
+    const sb = new THREE.Mesh(new THREE.CylinderGeometry(.17, .21, .12, 6), matStone2); sb.position.y = .06; sh.add(sb);
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(.15, .42, .15), matStone); sp.position.y = .33; sh.add(sp);
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(.15, .08, .08, 6), matStone2); bowl.position.y = .58; sh.add(bowl);
+    shade(sh);
+    const flameMat = new THREE.MeshStandardMaterial({ color: COL[v.owner], emissive: COL[v.owner], emissiveIntensity: 2, flatShading: true });
+    const flame = new THREE.Mesh(new THREE.OctahedronGeometry(.09, 0), flameMat); flame.position.y = .72; flame.scale.y = 1.7; sh.add(flame);
+    sh.position.set(v.x - .38, sy, v.z - .62); sh.visible = false; g.add(sh);
+    v.shrine = { g: sh, flame, mat: flameMat }; v.hasShrine = false;
     // villagers
     const n = 2 + v.stage;
     for (let i = 0; i < n; i++) {
@@ -548,18 +574,35 @@ document.addEventListener('touchmove', e => {
     godObjs[k].label = addLabel('<i style="background:' + CSSC[k] + '"></i>' + GOD[k], 'god', anchor, 0);
   });
 
-  // Himmelstreppe
+  // Himmelstreppe: gebaut ist, was der weiteste Gott erreicht hat; jeder Gott hat ein Licht auf seiner Stufe
+  const stair = { solid: [], ghost: [], orbs: {} };
   (function () {
     const y0 = heightAt(STAIR.x, STAIR.z), g = new THREE.Group(); g.position.set(STAIR.x, y0, STAIR.z); island.add(g);
+    const ghostMat = new THREE.LineBasicMaterial({ color: 0xf3c25a, transparent: true, opacity: .55 });
     for (let i = 0; i < 7; i++) {
-      const s = 1.35 - i * .15, h = .38, built = i < 3;
-      const m = built ? new THREE.Mesh(new THREE.BoxGeometry(s, h, s), i % 2 ? matStone : matStone2)
-        : new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(s, h, s)), new THREE.LineBasicMaterial({ color: 0xf3c25a, transparent: true, opacity: .55 }));
-      m.position.y = h / 2 + i * h; m.rotation.y = i * .28; if (built) { m.castShadow = true; m.receiveShadow = true; } g.add(m);
+      const s = 1.35 - i * .15, h = .38;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(s, h, s), i % 2 ? matStone : matStone2), e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(s, h, s)), ghostMat);
+      [m, e].forEach(o => { o.position.y = h / 2 + i * h; o.rotation.y = i * .28; g.add(o); });
+      m.castShadow = true; m.receiveShadow = true; m.visible = false;
+      stair.solid.push(m); stair.ghost.push(e);
     }
+    GODS.forEach((k, n) => {
+      const o = new THREE.Group(), core = new THREE.Mesh(new THREE.IcosahedronGeometry(.11, 0), glowMat(COL[k], 2.2)); o.add(core);
+      const halo = glowSprite(COL[k], 1.1); o.add(halo);
+      o.userData.a = n / 3 * Math.PI * 2 + .6; o.visible = false; g.add(o); stair.orbs[k] = o;
+    });
     const a = new THREE.Object3D(); a.position.y = 7 * .38 + .4; g.add(a);
-    addLabel('Himmelstreppe', '', a, 0);
+    stair.label = addLabel('Himmelstreppe', '', a, 0);
   })();
+  function paintStair(players) {
+    const top = Math.max(0, ...players.map(p => p.stairs || 0));
+    stair.solid.forEach((m, i) => { m.visible = i < top; stair.ghost[i].visible = i >= top; });
+    GODS.forEach(k => {
+      const p = players.find(x => x.god === k), o = stair.orbs[k]; o.visible = !!p; if (!p) return;
+      const n = p.stairs || 0, r = (1.35 - Math.max(0, n - 1) * .15) / 2 + .32;
+      o.position.set(Math.cos(o.userData.a) * r, .25 + n * .38, Math.sin(o.userData.a) * r); o.userData.y = o.position.y;
+    });
+  }
 
   // vegetation
   const reserved = [...VILLAGES.map(v => ({ x: v.x, z: v.z, r: 2.4 })), ...Object.values(TEMPLES).map(t => ({ x: t.x, z: t.z, r: 1.9 })), { x: STAIR.x, z: STAIR.z, r: 1.3 }, { x: POND.x, z: POND.z, r: POND.r + .7 }];
@@ -715,6 +758,12 @@ document.addEventListener('touchmove', e => {
   setFaith(0);
   const FAITH_TICK = 360;
   setInterval(() => { if (faithNext == null || faith >= 100) return; if (--faithNext <= 0) { faithNext = FAITH_TICK; setFaith(faith + 1); } }, 1000);
+  let gifts = 0; const giftNum = document.getElementById('gift-num');
+  function setGifts(n) { gifts = n || 0; giftNum.textContent = gifts; }
+  const ended = () => !!(game.latest && game.latest.winner);
+  // Gaben kommen zur vollen Stunde
+  const nextGiftMin = () => 60 - new Date().getUTCMinutes();
+  const STAIR_MAX = 7, stairCost = n => 20 + n * 10, SHRINE_COST = 30;
   const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
   const toasts = document.getElementById('toasts');
   function toast(msg, big) { const el = document.createElement('div'); el.className = 'toast' + (big ? ' big' : ''); el.textContent = msg; toasts.appendChild(el); while (toasts.children.length > 3) toasts.firstChild.remove(); setTimeout(() => el.remove(), big ? 3200 : 2400); }
@@ -771,7 +820,7 @@ document.addEventListener('touchmove', e => {
     const was = v.owner; v.owner = ownerOf(v);
     v.label.el.querySelector('i').style.background = CSSC[v.owner];
     if (was !== v.owner) {
-      v.flag.material.color.setHex(COL[v.owner]);
+      v.flag.material.color.setHex(COL[v.owner]); v.shrine.mat.color.setHex(COL[v.owner]); v.shrine.mat.emissive.setHex(COL[v.owner]);
       if (!quiet) {
         cheer(v, 1.6); sparkleBurst(new THREE.Vector3(v.x, heightAt(v.x, v.z) + 1, v.z), COL[v.owner], 110);
         if (v.owner === ME) { toast(v.name + ' glaubt jetzt an dich!', true); sfx.fanfare(); }
@@ -812,9 +861,10 @@ document.addEventListener('touchmove', e => {
     });
     refreshRadial();
   }
-  function refreshRadial() { document.getElementById('radial').querySelectorAll('.rbtn').forEach(b => { b.disabled = faith < ACTIONS[b.dataset.k].cost; }); }
+  function refreshRadial() { document.getElementById('radial').querySelectorAll('.rbtn').forEach(b => { b.disabled = faith < ACTIONS[b.dataset.k].cost || ended(); }); }
   function doAction(k) {
     if (!selected || !game.token) return; const a = ACTIONS[k], v = selected;
+    if (ended()) { toast('Die Partie ist beendet.'); return; }
     if (faith < a.cost) { toast('Nicht genug Glaube. Der nächste Punkt kommt in ' + mmss(faithNext || FAITH_TICK) + '.'); return; }
     setFaith(faith - a.cost);
     if (k === 'prophet') toast('Dein Prophet macht sich auf den Weg nach ' + v.name + '.');
@@ -832,9 +882,30 @@ document.addEventListener('touchmove', e => {
     const status = v.owner === 'neutral' ? 'Umkämpft, glaubt an niemanden' : 'Glaubt an ' + whom(v.owner);
     card.innerHTML = '<div class="card-head"><div><h2 id="card-title">' + v.name + '</h2><p>' + status + ' · ' + tot + ' Bewohner</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
       '<div class="split" aria-label="Glaubensverteilung"><i style="width:' + pct('gold') + ';background:' + CSSC.gold + '"></i><i style="width:' + pct('teal') + ';background:' + CSSC.teal + '"></i><i style="width:' + pct('pink') + ';background:' + CSSC.pink + '"></i><i style="width:' + pct('neutral') + ';background:#5d6478"></i></div>' +
-      '<div class="legend">' + GODS.map(k => '<span style="color:' + CSSC[k] + '">' + who(k) + ' ' + v.bel[k] + '</span>').join('') + '<span style="color:' + CSSC.neutral + '">offen ' + v.bel.neutral + '</span></div>';
+      '<div class="legend">' + GODS.map(k => '<span style="color:' + CSSC[k] + '">' + who(k) + ' ' + v.bel[k] + '</span>').join('') + '<span style="color:' + CSSC.neutral + '">offen ' + v.bel.neutral + '</span></div>' +
+      shrineRow(v);
     document.getElementById('card-close').addEventListener('click', deselect);
+    const sb = document.getElementById('shrine-btn'); if (sb) sb.addEventListener('click', e => { e.stopPropagation(); doBuild('schrein', v); });
   }
+  function shrineRow(v) {
+    const yields = (v.hasShrine ? 3 : 2) + ' Gaben pro Stunde';
+    if (v.hasShrine) return '<div class="row"><div class="ill">' + BUILD_ILL.schrein + '</div><div class="tx"><span class="t">Schrein</span><span class="d">Bringt ' + (v.owner === 'neutral' ? 'seinem Besitzer ' : v.owner === ME ? 'dir ' : whom(v.owner) + ' ') + yields + '. Ein Blitz nimmt hier nur 3 Gläubige.</span></div></div>';
+    if (v.owner !== ME) return '';
+    return '<div class="row"><div class="ill">' + BUILD_ILL.schrein + '</div><div class="tx"><span class="t">Schrein bauen</span><span class="d">Dein Dorf bringt dir 2 Gaben pro Stunde, mit Schrein 3. Ein Blitz nimmt hier dann nur 3 Gläubige.</span><div class="chips"><span class="chip' + (gifts < SHRINE_COST ? ' miss' : '') + '">' + SHRINE_COST + ' Gaben</span></div></div><button class="gold-btn" id="shrine-btn"' + (gifts < SHRINE_COST || ended() ? ' disabled' : '') + '>Bauen</button></div>';
+  }
+  function doBuild(what, v) {
+    if (!game.token || ended()) return;
+    const btns = card.querySelectorAll('.gold-btn, .pill-btn'); btns.forEach(b => b.disabled = true);
+    game.pending++;
+    rpc('build', { p_token: game.token, p_what: what, p_village: v ? v.id : null }).then(st => {
+      sfx.fanfare();
+      if (what === 'schrein') { sparkleBurst(new THREE.Vector3(v.x - .38, heightAt(v.x, v.z) + .8, v.z - .62), COL[ME], 70); toast('Dein Schrein in ' + v.name + ' steht.', true); }
+      else { stairBurst(ME); if (st.me.stairs < STAIR_MAX) toast('Stufe ' + st.me.stairs + ' deiner Himmelstreppe ist gebaut.', true); }
+      game.pending--; applyState(st);
+      if (selected) renderPanel(selected); else if (what === 'stufe' && !st.winner) openBuild();
+    }).catch(err => { game.pending--; toast(err.message); refresh(); btns.forEach(b => b.disabled = false); });
+  }
+  function stairBurst(k) { const o = stair.orbs[k]; sparkleBurst(o.getWorldPosition(new THREE.Vector3()), COL[k], 90); }
   function select(v) {
     selected = v; sfx.tap(); controls.autoRotate = false;
     selRing.visible = true; selRing.position.set(v.x, heightAt(v.x, v.z) + .12, v.z);
@@ -857,24 +928,50 @@ document.addEventListener('touchmove', e => {
   // dock sheets
   function openSheet(html) { card.innerHTML = html; sheet.hidden = false; dock.hidden = true; document.getElementById('card-close').addEventListener('click', closeSheet); }
   function closeSheet() { if (selected) return deselect(); sheet.hidden = true; dock.hidden = false; }
-  document.getElementById('dock-wunder').addEventListener('click', () => { sfx.tap(); toast('Tippe ein Dorf an, um dort ein Wunder zu wirken.'); });
+  document.getElementById('dock-wunder').addEventListener('click', () => { sfx.tap(); openWonders(); });
+  const WONDER_DESC = {
+    regen: 'Bringt dir 6 Gläubige im Dorf.',
+    blitz: 'Gehört das Dorf einem anderen Gott, verliert er bis zu 5 Gläubige (mit Schrein 3). Sonst bringt er dir 4 aus Furcht.',
+    prophet: 'Läuft von deinem Tempel ins Dorf und bringt dir 3 Gläubige.'
+  };
+  function openWonders() {
+    openSheet('<div class="card-head"><div><h2 id="card-title">Wunder</h2><p>Glaube ' + Math.round(faith) + ' von 100' + (faith < 100 && faithNext ? ', nächster Punkt in ' + mmss(faithNext) : '') + '. Wähle ein Dorf, dann das Wunder.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+      ['regen', 'blitz', 'prophet'].map(k => '<div class="row"><div class="ill">' + ICON[k] + '</div><div class="tx"><span class="t">' + ACTIONS[k].name + '</span><span class="d">' + WONDER_DESC[k] + '</span><div class="chips"><span class="chip' + (faith < ACTIONS[k].cost ? ' miss' : '') + '">' + ACTIONS[k].cost + ' Glaube</span></div></div></div>').join('') +
+      '<h3 class="sec">Dorf wählen</h3><div class="chips">' + VILLAGES.map(v => '<button class="vbtn" data-village="' + v.id + '"><i style="background:' + CSSC[v.owner] + '"></i>' + v.name + '</button>').join('') + '</div>');
+    card.querySelectorAll('[data-village]').forEach(b => b.addEventListener('click', () => { sheet.hidden = true; select(VBYID[b.dataset.village]); }));
+  }
   const BUILD_ILL = {
     tempel: '<svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><polygon points="8,40 26,48 44,40 26,32" fill="#e9e1cc"/><rect x="14" y="22" width="3" height="17" fill="#fff3dc"/><rect x="22" y="24" width="3" height="18" fill="#fff3dc"/><rect x="29" y="24" width="3" height="18" fill="#fff3dc"/><rect x="36" y="22" width="3" height="17" fill="#fff3dc"/><polygon points="10,22 26,10 42,22" fill="#f3c25a"/></svg>',
     schrein: '<svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><ellipse cx="26" cy="44" rx="14" ry="4" fill="#2e3442"/><rect x="22" y="20" width="8" height="24" fill="#e9e1cc"/><circle cx="26" cy="14" r="6" fill="#fff1c2"/><circle cx="26" cy="14" r="11" fill="#f3c25a" opacity=".3"/></svg>',
     treppe: '<svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect x="12" y="38" width="28" height="8" fill="#d2c4ab"/><rect x="15" y="30" width="22" height="8" fill="#e5dac6"/><rect x="18" y="22" width="16" height="8" fill="#d2c4ab"/><rect x="21" y="14" width="10" height="8" fill="none" stroke="#f3c25a" stroke-dasharray="2 2"/></svg>'
   };
-  document.getElementById('dock-bauen').addEventListener('click', () => { sfx.tap(); openSheet(
-    '<div class="card-head"><div><h2 id="card-title">Bauen</h2><p>Kommt mit Version 0.3: Deine Gläubigen bauen mit ihren Opfergaben.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
-    '<div class="row"><div class="ill">' + BUILD_ILL.tempel + '</div><div class="tx"><span class="t">Tempel II</span><span class="d">Stärkere Wunder, mehr Einfluss</span><div class="chips"><span class="chip">8 Stein</span><span class="chip">4 Holz</span></div></div><button class="gold-btn" disabled>Bauen</button></div>' +
-    '<div class="row"><div class="ill">' + BUILD_ILL.schrein + '</div><div class="tx"><span class="t">Schrein</span><span class="d">Dein Einfluss reicht ein Dorf weiter</span><div class="chips"><span class="chip">4 Holz</span><span class="chip">2 Stein</span></div></div><button class="gold-btn" disabled>Bauen</button></div>' +
-    '<div class="row"><div class="ill">' + BUILD_ILL.treppe + '</div><div class="tx"><span class="t">Himmelstreppe</span><span class="d">Wer Stufe 7 erreicht, gewinnt</span><div class="chips"><span class="chip">10 Stein</span><span class="chip">10 Holz</span></div></div><button class="gold-btn" disabled>Bauen</button></div>'); });
+  document.getElementById('dock-bauen').addEventListener('click', () => { sfx.tap(); openBuild(); });
+  function openBuild() {
+    const st = game.latest; if (!st) return;
+    const mine = VILLAGES.filter(v => v.owner === ME), n = st.me.stairs, rate = mine.reduce((a, v) => a + (v.hasShrine ? 3 : 2), 0);
+    const cost = stairCost(n), needTwo = n + 1 >= 5 && mine.length < 2;
+    const stairDesc = n >= STAIR_MAX ? 'Vollendet.' : 'Wer Stufe 7 zuerst erreicht, gewinnt.' + (n + 1 >= 5 ? ' Ab Stufe 5 brauchst du mindestens zwei Dörfer.' : '');
+    const free = mine.filter(v => !v.hasShrine);
+    openSheet('<div class="card-head"><div><h2 id="card-title">Bauen</h2><p>' + (rate ? 'Deine Dörfer bringen ' + rate + ' Gaben pro Stunde, die nächsten in ' + nextGiftMin() + ' min.' : 'Dir gehört gerade kein Dorf, also kommen keine Gaben.') + ' Vorrat ' + gifts + ' von 200.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+      '<div class="row"><div class="ill">' + BUILD_ILL.treppe + '</div><div class="tx"><span class="t">Himmelstreppe</span><span class="d">' + stairDesc + '</span>' +
+        (n < STAIR_MAX ? '<div class="chips"><span class="chip info">Stufe ' + n + ' von 7</span><span class="chip' + (gifts < cost ? ' miss' : '') + '">' + cost + ' Gaben</span>' + (needTwo ? '<span class="chip miss">zweites Dorf fehlt</span>' : '') + '</div>' : '') + '</div>' +
+        (n < STAIR_MAX ? '<button class="gold-btn" id="stair-btn"' + (gifts < cost || needTwo || ended() ? ' disabled' : '') + '>Stufe ' + (n + 1) + '</button>' : '') + '</div>' +
+      '<div class="row"><div class="ill">' + BUILD_ILL.schrein + '</div><div class="tx"><span class="t">Schrein</span><span class="d">In einem deiner Dörfer: +1 Gabe pro Stunde, ein Blitz nimmt dort nur 3 Gläubige. Der Schrein bleibt beim Dorf, auch wenn es den Gott wechselt.</span>' +
+        '<div class="chips"><span class="chip' + (gifts < SHRINE_COST ? ' miss' : '') + '">' + SHRINE_COST + ' Gaben</span>' +
+        (!free.length ? '<span class="chip info">' + (mine.length ? 'Alle deine Dörfer haben einen' : 'Erst ein Dorf gewinnen') + '</span>' : '') + '</div>' +
+        (free.length ? '<div class="chips"><span class="buildin">Bauen in</span>' + free.map(v => '<button class="vbtn" data-shrine="' + v.id + '"' + (gifts < SHRINE_COST || ended() ? ' disabled' : '') + '><i style="background:' + CSSC[ME] + '"></i>' + v.name + '</button>').join('') + '</div>' : '') + '</div></div>');
+    const sb = document.getElementById('stair-btn'); if (sb) sb.addEventListener('click', () => doBuild('stufe'));
+    card.querySelectorAll('[data-shrine]').forEach(b => b.addEventListener('click', () => doBuild('schrein', VBYID[b.dataset.shrine])));
+  }
   document.getElementById('dock-goetter').addEventListener('click', () => { sfx.tap(); openGods(); });
   function openGods() {
     const tot = {}; GODS.forEach(k => tot[k] = 0); VILLAGES.forEach(v => GODS.forEach(k => tot[k] += v.bel[k]));
     const list = GODS.filter(k => PLAYERS[k]).sort((a, b) => tot[b] - tot[a]), max = Math.max(1, ...list.map(k => tot[k]));
-    const free = GODS.length - list.length;
-    openSheet('<div class="card-head"><div><h2 id="card-title">Götter</h2><p>Wer die meisten Gläubigen hat, führt. Die Himmelstreppe kommt mit Version 0.3.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
-      list.map((k, i) => '<div class="rank"><span class="pos">' + (i + 1) + '</span><div class="who"><span>' + (k === ME ? 'Du' : esc(PLAYERS[k])) + ' · ' + GOD_LONG[k] + '</span><div class="mini"><i style="width:' + (tot[k] / max * 100) + '%;background:' + CSSC[k] + '"></i></div></div><span style="font-variant-numeric:tabular-nums">' + tot[k] + '</span></div>').join('') +
+    const free = ended() ? 0 : GODS.length - list.length;
+    const st = game.latest, stairsOf = k => ((st && st.players || []).find(p => p.god === k) || {}).stairs || 0, owned = k => VILLAGES.filter(v => v.owner === k).length;
+    list.sort((a, b) => stairsOf(b) - stairsOf(a) || tot[b] - tot[a]);
+    openSheet('<div class="card-head"><div><h2 id="card-title">Götter</h2><p>' + (ended() ? who(st.winner) + (st.winner === ME ? ' hast' : ' hat') + ' die Himmelstreppe vollendet.' : 'Wer zuerst Stufe 7 der Himmelstreppe baut, gewinnt.') + '</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+      list.map((k, i) => '<div class="rank"><span class="pos">' + (i + 1) + '</span><div class="who"><span>' + (k === ME ? 'Du' : esc(PLAYERS[k])) + ' · ' + GOD_LONG[k] + '</span><div class="mini"><i style="width:' + (stairsOf(k) / 7 * 100) + '%;background:' + CSSC[k] + '"></i></div><span class="d" style="font-size:11.5px;color:var(--muted)">' + tot[k] + ' Gläubige · ' + owned(k) + (owned(k) === 1 ? ' Dorf' : ' Dörfer') + '</span></div><span style="font-variant-numeric:tabular-nums">Stufe ' + stairsOf(k) + '</span></div>').join('') +
       (free ? '<div class="invite"><span>Spielcode <b>' + esc(game.code) + '</b><br>' + free + (free === 1 ? ' Gott ist' : ' Götter sind') + ' noch frei</span><button class="gold-btn" id="invite-btn">Einladen</button></div>' : '') +
       '<h3 class="sec">Chronik</h3>' + chronicle(game.events.slice(-15).reverse()) +
       '<button class="linkish" id="new-game">Spiel wechseln, erstellen oder beitreten</button><p class="build">' + BUILD + '</p>');
@@ -910,6 +1007,8 @@ document.addEventListener('touchmove', e => {
       if (p.jump > 0) { y += Math.abs(Math.sin(t * 10 + p.ph)) * .14 * Math.min(1, p.jump); p.jump -= dt * .6; }
       p.obj.position.set(x, y, z); p.obj.rotation.y = -p.a - (p.sp > 0 ? 0 : Math.PI);
     });
+    VILLAGES.forEach(v => { if (v.hasShrine) { const f = v.shrine.flame; f.rotation.y += dt * 2.2; f.scale.y = 1.6 + Math.sin(t * 9 + v.x) * .25; } });
+    GODS.forEach((k, n) => { const o = stair.orbs[k]; if (o.visible) o.position.y = o.userData.y + Math.sin(t * 1.6 + n * 2) * .06; });
     if (selRing.visible) { const s = 1 + Math.sin(t * 4) * .04; selRing.scale.set(s, s, 1); }
     // walkers
     for (let i = walkers.length - 1; i >= 0; i--) {
@@ -972,6 +1071,9 @@ document.addEventListener('touchmove', e => {
     if (e.action === 'join') return n + (e.god === ME ? ' trittst' : ' tritt') + ' als ' + GOD_LONG[e.god] + ' an.';
     if (e.action === 'regen') return n + ': Regen über ' + vn + ', +' + e.amount + ' Gläubige';
     if (e.action === 'prophet') return n + ': Prophet in ' + vn + ', +' + e.amount + ' Gläubige';
+    if (e.action === 'schrein') return n + (e.god === ME ? ' baust' : ' baut') + ' einen Schrein in ' + vn + '.';
+    if (e.action === 'stufe') return n + (e.god === ME ? ' baust' : ' baut') + ' Stufe ' + e.amount + ' der Himmelstreppe.';
+    if (e.action === 'sieg') return n + (e.god === ME ? ' hast' : ' hat') + ' die Himmelstreppe vollendet!';
     if (e.action === 'blitz') return e.target_god ? n + ': Blitz auf ' + vn + ', ' + (e.target_god === ME ? 'du verlierst ' : who(e.target_god) + ' verliert ') + -e.amount : n + ': Blitz auf ' + vn + ', +' + e.amount + ' aus Furcht';
     return '';
   }
@@ -994,14 +1096,15 @@ document.addEventListener('touchmove', e => {
     GODS.forEach(k => godObjs[k].label.el.innerHTML = '<i style="background:' + CSSC[k] + '"></i>' + (k === ME ? 'Du' : PLAYERS[k] ? esc(PLAYERS[k]) : 'frei') + ' · ' + GOD[k]);
   }
   function applyVillages(st, quiet) {
-    (st.villages || []).forEach(sv => { const v = VBYID[sv.id]; if (!v) return; GODS.concat('neutral').forEach(k => v.bel[k] = sv[k]); afterChange(v, quiet); });
+    (st.villages || []).forEach(sv => { const v = VBYID[sv.id]; if (!v) return; GODS.concat('neutral').forEach(k => v.bel[k] = sv[k]); v.hasShrine = !!sv.shrine; v.shrine.g.visible = v.hasShrine; afterChange(v, quiet); });
     paintTerritories();
   }
   // Übernimmt einen Spielstand vom Server. Fremde Wunder werden erst abgespielt, dann sichtbar.
   function applyState(st) {
     game.latest = st; game.events = st.events || [];
     applyPlayers(st);
-    setFaith(st.me.faith); faithNext = st.me.next_in;
+    setFaith(st.me.faith); faithNext = st.me.next_in; setGifts(st.me.gifts);
+    paintStair(st.players || []);
     const fresh = game.events.filter(e => e.id > game.lastEvent);
     game.lastEvent = game.events.reduce((m, e) => Math.max(m, e.id), game.lastEvent);
     if (!game.started) { applyVillages(st, true); return; }
@@ -1009,12 +1112,25 @@ document.addEventListener('touchmove', e => {
     let wait = 0;
     foreign.forEach(e => {
       toast(plain(eventText(e)));
+      if (e.action === 'stufe') { stairBurst(e.god); return; }
+      if (e.action === 'schrein' && VBYID[e.village]) { const sv = VBYID[e.village]; sparkleBurst(new THREE.Vector3(sv.x - .38, heightAt(sv.x, sv.z) + .8, sv.z - .62), COL[e.god], 70); return; }
+      if (e.action === 'sieg') return;
       const v = VBYID[e.village], a = ACTIONS[e.action];
       if (!v || !a) return;
       wait = Math.max(wait, e.action === 'prophet' ? 8.2 : 1.7);
       a.play(v, e.god, () => showAmount(v, e));
     });
     if (wait) setTimeout(() => applyVillages(game.latest), wait * 1000); else applyVillages(st);
+    if (st.winner && !game.shownWin) { game.shownWin = true; setTimeout(showWin, wait ? wait * 1000 + 400 : 600); }
+  }
+  function showWin() {
+    const st = game.latest, w = st.winner, mine = w === ME;
+    if (selected) deselect();
+    openSheet('<div class="card-head"><div><h2 id="card-title">Die Partie ist entschieden</h2><p>Spiel ' + esc(game.code) + '</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+      '<div class="win"><h2 style="color:' + CSSC[w] + '">' + (mine ? 'Du hast gewonnen' : esc(PLAYERS[w] || GOD[w]) + ' hat gewonnen') + '</h2><p>' + (mine ? 'Deine Himmelstreppe reicht bis in den Himmel. Die Insel gehört dir.' : GOD_LONG[w] + ' hat als Erstes die siebte Stufe der Himmelstreppe vollendet.') + '</p>' +
+      '<button class="gold-btn" id="win-new">Neue Partie</button></div>');
+    if (mine) sfx.fanfare(); stairBurst(w);
+    document.getElementById('win-new').addEventListener('click', () => { closeSheet(); showLobby('create'); });
   }
   let refreshing = null;
   function refresh() {
@@ -1039,7 +1155,7 @@ document.addEventListener('touchmove', e => {
 
   async function startGame(code, token) {
     const st = await rpc('get_state', { p_token: token });
-    game.code = st.code; game.token = token; game.started = false; game.lastEvent = 0;
+    game.code = st.code; game.token = token; game.started = false; game.lastEvent = 0; game.shownWin = false;
     if (game.live) { try { game.live.unsubscribe(); } catch (e) {} game.live = null; }
     saved.put(game.code, token); saved.putInfo(game.code, st.me.name + ' als ' + GOD_LONG[st.me.god] + ', ' + st.players.length + ' Spieler');
     if (selected) deselect();
@@ -1048,7 +1164,8 @@ document.addEventListener('touchmove', e => {
     lobby.el.hidden = true; sheet.hidden = true; dock.hidden = false;
     connectLive();
     const missed = game.events.filter(e => !e.mine && new Date(e.created_at) > new Date(st.me.seen_at));
-    if (missed.length) openSheet('<div class="card-head"><div><h2 id="card-title">Seit deinem letzten Besuch</h2><p>Das haben die anderen Götter getan.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' + chronicle(missed.reverse()));
+    if (st.winner) { game.shownWin = true; setTimeout(showWin, 500); }
+    else if (missed.length) openSheet('<div class="card-head"><div><h2 id="card-title">Seit deinem letzten Besuch</h2><p>Das haben die anderen Götter getan.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' + chronicle(missed.reverse()));
     else setTimeout(() => toast('Tippe ein Dorf an, um ein Wunder zu wirken.'), 800);
     rpc('mark_seen', { p_token: token }).catch(() => {});
   }
