@@ -153,6 +153,20 @@ button, input { touch-action: manipulation; }
 .invite .gold-btn { margin-left: auto; min-height: 38px; }
 h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: var(--cream); }
 .fallback { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-size: 14px; color: var(--cream); background: #0f1a33; }
+.omen { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 108px); display: flex; justify-content: center; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); pointer-events: none; z-index: 4; }
+.omen > div { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; max-width: 420px; background: linear-gradient(#2b2536, #15131c); border: 1px solid rgba(172, 150, 220, 0.6); border-radius: 16px; padding: 8px 8px 8px 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); animation: tin 0.25s ease-out; cursor: pointer; }
+.omen svg { width: 30px; height: 30px; flex-shrink: 0; }
+.omen .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.omen b { font-family: var(--display); font-size: 13.5px; font-weight: 900; color: #ece2ff; }
+.omen span { font-size: 11.5px; font-weight: 800; color: var(--muted); line-height: 1.3; }
+.omen .gold-btn { min-height: 40px; padding: 0 12px; font-size: 12.5px; }
+body.has-omen .toasts { top: calc(env(safe-area-inset-top, 0px) + 184px); }
+.fx { display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 800; line-height: 1.3; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 7px 10px; }
+.fx svg { width: 22px; height: 22px; flex-shrink: 0; }
+.fx span { flex: 1; min-width: 0; }
+.fx small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 700; }
+.fx.dark { border-color: rgba(172, 150, 220, 0.5); background: rgba(96, 74, 140, 0.18); }
+.lbl svg { width: 12px; height: 12px; }
 @media (max-width: 380px) { .faith .bar { width: 70px; } .god .nm { font-size: 13px; } .row { gap: 9px; padding: 9px; } .row .ill { width: 46px; height: 46px; border-radius: 12px; } .row .ill svg { width: 40px; height: 40px; } .row .gold-btn { padding: 0 12px; } }
 @media (prefers-reduced-motion: reduce) { .rbtn, .card, .toast { animation: none; } }
 </style>
@@ -184,6 +198,7 @@ h3.sec { margin: 4px 0 0; font-family: var(--display); font-size: 14px; color: v
 </div>
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="omen" id="omen" role="alert" hidden></div>
 <div class="radial" id="radial"></div>
 
 <div class="dock" id="dock">
@@ -226,7 +241,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.3.1 · Stand 2';
+  const BUILD = 'Version 0.4 · Stand 1';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -452,7 +467,7 @@ document.addEventListener('touchmove', e => {
   const shirtCols = [0x55607a, 0x6e5444, 0x4c654e, 0x5e5470, 0x7a6a4e];
   function ownerOf(v) { const b = v.bel, tot = b.gold + b.teal + b.pink + b.neutral; for (const k of GODS) { const others = GODS.filter(o => o !== k).map(o => b[o]); if (b[k] * 2 >= tot && b[k] > Math.max(...others)) return k; } return 'neutral'; }
   VILLAGES.forEach(v => {
-    v.owner = ownerOf(v);
+    v.owner = ownerOf(v); v.preach = {}; v.shieldUntil = 0; v.wrath = null;
     const g = new THREE.Group(); island.add(g); v.group = g;
     const y0 = heightAt(v.x, v.z);
     const plaza = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, .08, 14), M(0x9d968a)); plaza.position.set(v.x, y0 + .02, v.z); plaza.receiveShadow = true; g.add(plaza);
@@ -669,6 +684,41 @@ document.addEventListener('touchmove', e => {
     walkers.push({ p, curve, t: 0, dur, toV, owner, lbl, onArrive });
   }
 
+  // Schutzsegen: durchscheinende Kuppel in der Farbe des Segnenden
+  function domeOf(v) {
+    if (v.dome) return v.dome;
+    const y0 = heightAt(v.x, v.z), geo = new THREE.SphereGeometry(2.3, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .13, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const m = new THREE.Mesh(geo, mat); m.position.set(v.x, y0 - .05, v.z);
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .4, blending: THREE.AdditiveBlending, depthWrite: false }));
+    m.add(edge); m.visible = false; island.add(m);
+    return (v.dome = { m, mat, edge });
+  }
+  function blessOn(v, god) { const d = domeOf(v); d.mat.color.setHex(COL[god]); d.edge.material.color.setHex(COL[god]); d.m.visible = true; d.pulse = 1; sparkleBurst(new THREE.Vector3(v.x, heightAt(v.x, v.z) + 2, v.z), COL[god], 90); }
+  // Vorzeichen: dunkle Wolken über dem Dorf, bis der Himmelszorn einschlägt
+  function omenOf(v) {
+    if (v.omen) return v.omen;
+    const y0 = heightAt(v.x, v.z), g = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({ color: 0x3b3a4c, emissive: 0x8a6cff, emissiveIntensity: 0, flatShading: true });
+    [[0, .1, 0, .95], [1.05, -.05, .35, .75], [-1.0, 0, -.25, .8], [.35, .3, -.85, .7], [-.5, .25, .85, .7], [1.0, .05, -.75, .55], [-1.25, -.1, .7, .5], [.6, .35, .7, .6], [-.4, .4, -.6, .6]].forEach(([x, y, z, r]) => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat); m.position.set(x, y, z); m.scale.set(1.2, .62, 1.2); m.rotation.set(0, x + z, 0); g.add(m); });
+    const veil = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.3, 4.2, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x0c0a16, transparent: true, opacity: .16, depthWrite: false, side: THREE.DoubleSide }));
+    veil.position.y = -2.2; g.add(veil);
+    g.position.set(v.x, y0 + 4.6, v.z); g.visible = false; island.add(g);
+    const sh = new THREE.Mesh(new THREE.CircleGeometry(2.5, 18), new THREE.MeshBasicMaterial({ color: 0x0a0814, transparent: true, opacity: .28, depthWrite: false }));
+    sh.rotation.x = -Math.PI / 2; sh.position.set(v.x, y0 + .09, v.z); sh.visible = false; island.add(sh);
+    return (v.omen = { g, mat, sh, flash: 0, next: 1 + Math.random() * 3 });
+  }
+  function omenOn(v) { const o = omenOf(v); o.g.visible = o.sh.visible = true; }
+  function omenOff(v) { if (v.omen) v.omen.g.visible = v.omen.sh.visible = false; }
+  const PREACH_SPOT = { gold: [.95, .55], teal: [-.15, 1.05], pink: [-.95, -.25] };
+  function preacherOf(v, k) {
+    v.preachers = v.preachers || {};
+    if (v.preachers[k]) return v.preachers[k];
+    const p = prophet(COL[k]), [dx, dz] = PREACH_SPOT[k];
+    p.position.set(v.x + dx, heightAt(v.x + dx, v.z + dz), v.z + dz); p.lookAt(v.x, p.position.y, v.z); p.userData.y = p.position.y; island.add(p);
+    return (v.preachers[k] = p);
+  }
+
   // selection ring
   const selRing = new THREE.Mesh(new THREE.TorusGeometry(2, .05, 6, 64), new THREE.MeshBasicMaterial({ color: 0xfff1c2, transparent: true, opacity: .9 }));
   selRing.rotation.x = Math.PI / 2; selRing.visible = false; island.add(selRing);
@@ -842,10 +892,27 @@ document.addEventListener('touchmove', e => {
   const ACTIONS = {
     regen: { name: 'Regen', cost: 15, play: (v, god, done) => { sfx.chime(); rainOn(v, done); } },
     blitz: { name: 'Blitz', cost: 25, play: (v, god, done) => { lightningOn(v, () => { villagers.forEach(p => { if (p.v === v) p.sp *= 3; }); setTimeout(() => villagers.forEach(p => { if (p.v === v) p.sp /= 3; }), 2500); done(); }); } },
-    prophet: { name: 'Prophet', cost: 10, play: (v, god, done) => { if (god === ME) sfx.tap(); sendProphet(TEMPLES[god], v, COL[god], god, 8, done); } }
+    predigt: { name: 'Prophet', cost: 20, play: (v, god, done) => { if (god === ME) sfx.tap(); sendProphet(TEMPLES[god], v, COL[god], god, 8, done); } },
+    segen: { name: 'Schutzsegen', short: 'Segen', cost: 25, play: (v, god, done) => { sfx.chime(); blessOn(v, god); done(); } },
+    zorn: { name: 'Himmelszorn', short: 'Zorn', cost: 50, play: (v, god, done) => { sfx.bad(); omenOn(v); done(); } },
+    // Altes Prophetenwunder aus 0.3, nur noch für die Chronik und für Ereignisse älterer Versionen
+    prophet: { name: 'Prophet', cost: 10, play: (v, god, done) => sendProphet(TEMPLES[god], v, COL[god], god, 8, done) }
   };
+  const WONDERS = ['regen', 'blitz', 'predigt', 'segen', 'zorn'];
+  // Welche Wunder im Ring erscheinen: Schutzsegen nur im eigenen Dorf, Himmelszorn nur über fremden Dörfern
+  const fits = (k, v) => k === 'segen' ? v.owner === ME : k === 'zorn' ? v.owner !== ME && v.owner !== 'neutral' : true;
+  const foreignShield = v => v.shieldUntil > Date.now() && v.shieldGod !== ME;
+  function blockedWhy(k, v) {
+    if (foreignShield(v)) return 'Hier liegt ein Schutzsegen von ' + who(v.shieldGod) + '.';
+    if (k === 'predigt' && (v.preach[ME] || walkers.some(w => w.toV === v && w.owner === ME))) return 'Dein Prophet predigt hier schon.';
+    if (k === 'zorn' && v.wrath) return 'Über ' + v.name + ' ziehen schon dunkle Wolken auf.';
+    return '';
+  }
+  // Dauer in Stunden und Minuten, z. B. „3 Std. 12 Min.“
+  function hm(ms) { const m = Math.max(1, Math.round(ms / 60000)), h = Math.floor(m / 60); return ((h ? h + ' Std. ' : '') + (m % 60 || !h ? (m % 60) + ' Min.' : '')).trim(); }
   function showAmount(v, e) {
     const at = v.anchor.getWorldPosition(new THREE.Vector3());
+    if (e.action === 'segen' || e.action === 'zorn' || e.action === 'predigt' || e.action === 'zorn_verpufft') return;
     if (e.amount < 0) floatText('−' + -e.amount, 'für ' + who(e.target_god), at);
     else floatText('+' + e.amount, e.action === 'blitz' ? 'aus Furcht' : 'für ' + who(e.god), at);
   }
@@ -857,26 +924,31 @@ document.addEventListener('touchmove', e => {
     regen: '<svg viewBox="0 0 24 24" fill="none" stroke="#bfe6ff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 13 a4 4 0 0 1 1-8 a5 5 0 0 1 9 1 a3.5 3.5 0 0 1 1 7 Z"/><path d="M8 17 l-1 3 M12 17 l-1 3 M16 17 l-1 3"/></svg>',
     blitz: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 L5 14 H11 L9 22 L19 9 H13 Z" fill="#f3c25a"/></svg>',
     prophet: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff3dc" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="5.5" r="2.6"/><path d="M11 8.5 L6.5 21 H15.5 Z"/><path d="M17.5 7 V21"/><circle cx="17.5" cy="5.5" r="1.4" fill="#f3c25a" stroke="none"/></svg>',
+    predigt: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff3dc" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="5.5" r="2.6"/><path d="M11 8.5 L6.5 21 H15.5 Z"/><path d="M17.5 7 V21"/><circle cx="17.5" cy="5.5" r="1.4" fill="#f3c25a" stroke="none"/></svg>',
+    segen: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff1c2" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 19 A9 9 0 0 1 21 19 Z" fill="rgba(243,194,90,.25)"/><path d="M7.5 19 A4.5 4.5 0 0 1 16.5 19" stroke="#f3c25a"/><path d="M12 3 V6.5 M5.5 6 L7.3 8 M18.5 6 L16.7 8" stroke-linecap="round"/></svg>',
+    zorn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14 a4.5 4.5 0 0 1 .8-8.9 a5.5 5.5 0 0 1 10.2 1.6 A3.6 3.6 0 0 1 17.5 14 Z" fill="#4a4258" stroke="#b9a8e6" stroke-width="1.6"/><path d="M12.5 12 L10 17 H13 L11 22" fill="none" stroke="#c9b6ff" stroke-width="2" stroke-linejoin="round"/></svg>',
     close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18"/></svg>'
   };
   function buildRadial() {
     radial.innerHTML = '';
-    ['regen', 'blitz', 'prophet'].forEach((k, i) => {
+    WONDERS.filter(k => fits(k, selected)).forEach((k, i) => {
       const b = document.createElement('button'); b.className = 'rbtn'; b.id = 'act-' + k; b.dataset.k = k; b.style.animationDelay = (i * .05) + 's';
-      b.innerHTML = ICON[k] + ACTIONS[k].name + '<em>' + ACTIONS[k].cost + ' Glaube</em>';
+      b.innerHTML = ICON[k] + (ACTIONS[k].short || ACTIONS[k].name) + '<em>' + ACTIONS[k].cost + ' Glaube</em>';
       b.addEventListener('click', e => { e.stopPropagation(); doAction(k); });
       radial.appendChild(b);
     });
     refreshRadial();
   }
-  function refreshRadial() { document.getElementById('radial').querySelectorAll('.rbtn').forEach(b => { b.disabled = faith < ACTIONS[b.dataset.k].cost || ended(); }); }
+  function refreshRadial() { document.getElementById('radial').querySelectorAll('.rbtn').forEach(b => { b.disabled = faith < ACTIONS[b.dataset.k].cost || ended() || !selected || !!blockedWhy(b.dataset.k, selected); }); }
   function doAction(k) {
     if (!selected || !game.token) return; const a = ACTIONS[k], v = selected;
     if (ended()) { toast('Die Partie ist beendet.'); return; }
     if (faith < a.cost) { toast('Nicht genug Glaube. Der nächste Punkt kommt in ' + mmss(faithNext || FAITH_TICK) + '.'); return; }
+    const why = blockedWhy(k, v); if (why) { toast(plain(why)); return; }
     setFaith(faith - a.cost);
-    if (k === 'prophet') toast('Dein Prophet macht sich auf den Weg nach ' + v.name + '.');
-    const landed = new Promise(res => a.play(v, ME, res));
+    if (k === 'predigt') toast('Dein Prophet macht sich auf den Weg nach ' + v.name + '.');
+    if (k === 'zorn') toast('Dunkle Wolken ziehen über ' + v.name + ' auf. In 4 Stunden trifft sie dein Zorn.');
+    const landed = new Promise(res => a.play(v, ME, res)); refreshRadial();
     const call = rpc('cast_wonder', { p_token: game.token, p_action: k, p_village: v.id });
     game.pending++;
     Promise.all([landed, call]).then(([, st]) => {
@@ -891,9 +963,16 @@ document.addEventListener('touchmove', e => {
     card.innerHTML = '<div class="card-head"><div><h2 id="card-title">' + v.name + '</h2><p>' + status + ' · ' + tot + ' Bewohner</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
       '<div class="split" aria-label="Glaubensverteilung"><i style="width:' + pct('gold') + ';background:' + CSSC.gold + '"></i><i style="width:' + pct('teal') + ';background:' + CSSC.teal + '"></i><i style="width:' + pct('pink') + ';background:' + CSSC.pink + '"></i><i style="width:' + pct('neutral') + ';background:#5d6478"></i></div>' +
       '<div class="legend">' + GODS.map(k => '<span style="color:' + CSSC[k] + '">' + who(k) + ' ' + v.bel[k] + '</span>').join('') + '<span style="color:' + CSSC.neutral + '">offen ' + v.bel.neutral + '</span></div>' +
-      shrineRow(v);
+      fxRows(v) + shrineRow(v);
     document.getElementById('card-close').addEventListener('click', deselect);
     const sb = document.getElementById('shrine-btn'); if (sb) sb.addEventListener('click', e => { e.stopPropagation(); doBuild('schrein', v); });
+  }
+  function fxRows(v) {
+    const now = Date.now(); let h = '';
+    if (v.wrath) h += '<div class="fx dark">' + ICON.zorn + '<span>Dunkle Wolken' + '<small>Himmelszorn von ' + who(v.wrath.god) + ' trifft ' + (v.wrath.target_god === ME ? 'dich' : who(v.wrath.target_god)) + ' in ' + hm(new Date(v.wrath.at) - now) + (v.shieldUntil > new Date(v.wrath.at).getTime() && v.shieldGod === v.wrath.target_god ? ', der Schutzsegen hält ihn ab' : '') + '</small></span></div>';
+    if (v.shieldUntil > now) h += '<div class="fx">' + ICON.segen + '<span>' + (v.shieldGod === ME ? 'Dein Schutzsegen' : 'Schutzsegen von ' + who(v.shieldGod)) + '<small>Hier wirkt kein fremdes Wunder, noch ' + hm(v.shieldUntil - now) + '</small></span></div>';
+    GODS.forEach(k => { const p = v.preach[k]; if (p) h += '<div class="fx">' + ICON.predigt + '<span>' + (k === ME ? 'Dein Prophet' : 'Prophet von ' + who(k)) + '<small>Predigt noch ' + p.left + ' Std., bisher ' + p.won + ' Gläubige</small></span></div>'; });
+    return h;
   }
   function shrineRow(v) {
     const yields = (v.hasShrine ? 3 : 2) + ' Gaben pro Stunde';
@@ -918,9 +997,9 @@ document.addEventListener('touchmove', e => {
     selected = v; sfx.tap(); controls.autoRotate = false;
     selRing.visible = true; selRing.position.set(v.x, heightAt(v.x, v.z) + .12, v.z);
     focus.from.copy(controls.target); focus.to.set(v.x, heightAt(v.x, v.z) + .8, v.z); focus.t = 0;
-    cheer(v, .6); buildRadial(); renderPanel(v); sheet.hidden = false; dock.hidden = true;
+    cheer(v, .6); buildRadial(); renderPanel(v); sheet.hidden = false; dock.hidden = true; paintOmen();
   }
-  function deselect() { selected = null; selRing.visible = false; radial.innerHTML = ''; sheet.hidden = true; dock.hidden = false; focus.from.copy(controls.target); focus.to.set(0, 1, 0); focus.t = 0; }
+  function deselect() { selected = null; selRing.visible = false; radial.innerHTML = ''; sheet.hidden = true; dock.hidden = false; paintOmen(); focus.from.copy(controls.target); focus.to.set(0, 1, 0); focus.t = 0; }
   const focus = { from: new THREE.Vector3(), to: new THREE.Vector3(0, 1, 0), t: 1 };
 
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let down = null;
@@ -934,17 +1013,19 @@ document.addEventListener('touchmove', e => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (selected) deselect(); else closeSheet(); } });
 
   // dock sheets
-  function openSheet(html) { card.innerHTML = html; sheet.hidden = false; dock.hidden = true; document.getElementById('card-close').addEventListener('click', closeSheet); }
-  function closeSheet() { if (selected) return deselect(); sheet.hidden = true; dock.hidden = false; }
+  function openSheet(html) { card.innerHTML = html; sheet.hidden = false; dock.hidden = true; paintOmen(); document.getElementById('card-close').addEventListener('click', closeSheet); }
+  function closeSheet() { if (selected) return deselect(); sheet.hidden = true; dock.hidden = false; paintOmen(); }
   document.getElementById('dock-wunder').addEventListener('click', () => { sfx.tap(); openWonders(); });
   const WONDER_DESC = {
     regen: 'Bringt dir 6 Gläubige im Dorf.',
     blitz: 'Gehört das Dorf einem anderen Gott, verliert er bis zu 5 Gläubige (mit Schrein 3). Sonst bringt er dir 4 aus Furcht.',
-    prophet: 'Läuft von deinem Tempel ins Dorf und bringt dir 3 Gläubige.'
+    predigt: 'Bleibt 12 Stunden im Dorf und gewinnt dir jede Stunde einen Gläubigen.',
+    segen: 'Nur in deinen Dörfern: 8 Stunden wirkt dort kein fremdes Wunder, fremde Propheten ziehen ab.',
+    zorn: 'Dunkle Wolken kündigen ihn 4 Stunden vorher an. Dann verliert der Besitzer 12 Gläubige.'
   };
   function openWonders() {
     openSheet('<div class="card-head"><div><h2 id="card-title">Wunder</h2><p>Glaube ' + Math.round(faith) + ' von 100' + (faith < 100 && faithNext ? ', nächster Punkt in ' + mmss(faithNext) : '') + '. Wähle ein Dorf, dann das Wunder.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
-      ['regen', 'blitz', 'prophet'].map(k => '<div class="row"><div class="ill">' + ICON[k] + '</div><div class="tx"><span class="t">' + ACTIONS[k].name + '</span><span class="d">' + WONDER_DESC[k] + '</span><div class="chips"><span class="chip' + (faith < ACTIONS[k].cost ? ' miss' : '') + '">' + ACTIONS[k].cost + ' Glaube</span></div></div></div>').join('') +
+      WONDERS.map(k => '<div class="row"><div class="ill">' + ICON[k] + '</div><div class="tx"><span class="t">' + ACTIONS[k].name + '</span><span class="d">' + WONDER_DESC[k] + '</span><div class="chips"><span class="chip' + (faith < ACTIONS[k].cost ? ' miss' : '') + '">' + ACTIONS[k].cost + ' Glaube</span></div></div></div>').join('') +
       '<h3 class="sec">Dorf wählen</h3><div class="chips">' + VILLAGES.map(v => '<button class="vbtn" data-village="' + v.id + '"><i style="background:' + CSSC[v.owner] + '"></i>' + v.name + '</button>').join('') + '</div>');
     card.querySelectorAll('[data-village]').forEach(b => b.addEventListener('click', () => { sheet.hidden = true; select(VBYID[b.dataset.village]); }));
   }
@@ -1015,7 +1096,16 @@ document.addEventListener('touchmove', e => {
       if (p.jump > 0) { y += Math.abs(Math.sin(t * 10 + p.ph)) * .14 * Math.min(1, p.jump); p.jump -= dt * .6; }
       p.obj.position.set(x, y, z); p.obj.rotation.y = -p.a - (p.sp > 0 ? 0 : Math.PI);
     });
-    VILLAGES.forEach(v => { if (v.hasShrine) { const f = v.shrine.flame; f.rotation.y += dt * 2.2; f.scale.y = 1.6 + Math.sin(t * 9 + v.x) * .25; } });
+    VILLAGES.forEach(v => {
+      if (v.hasShrine) { const f = v.shrine.flame; f.rotation.y += dt * 2.2; f.scale.y = 1.6 + Math.sin(t * 9 + v.x) * .25; }
+      const d = v.dome; if (d && d.m.visible) { d.pulse = Math.max(0, (d.pulse || 0) - dt); d.mat.opacity = .11 + Math.sin(t * 1.8 + v.x) * .03 + d.pulse * .25; d.edge.material.opacity = .32 + Math.sin(t * 1.8 + v.x) * .08; d.m.rotation.y += dt * .05; }
+      const o = v.omen; if (o && o.g.visible) {
+        o.g.rotation.y += dt * .22 * sp; o.g.position.y = heightAt(v.x, v.z) + 4.6 + Math.sin(t * .8 + v.z) * .12;
+        if (!reduce && (o.next -= dt) <= 0) { o.flash = 1; o.next = 2.5 + Math.random() * 4; }
+        o.flash = Math.max(0, o.flash - dt * 3); o.mat.emissiveIntensity = o.flash > .5 || o.flash < .25 ? o.flash * 1.4 : .2;
+      }
+      if (v.preachers) GODS.forEach((k, n) => { const p = v.preachers[k]; if (p && p.visible) { p.position.y = p.userData.y + Math.abs(Math.sin(t * 1.4 + n)) * .05; p.rotation.y += Math.sin(t * .7 + n) * dt * .4; } });
+    });
     GODS.forEach((k, n) => { const o = stair.orbs[k]; if (o.visible) o.position.y = o.userData.y + Math.sin(t * 1.6 + n * 2) * .06; });
     if (selRing.visible) { const s = 1 + Math.sin(t * 4) * .04; selRing.scale.set(s, s, 1); }
     // walkers
@@ -1026,6 +1116,7 @@ document.addEventListener('touchmove', e => {
       if (k >= 1) {
         const v = w.toV; sparkleBurst(new THREE.Vector3(v.x, heightAt(v.x, v.z) + .6, v.z), COL[w.owner], 50); cheer(v, 1); if (w.owner === ME) sfx.chime();
         island.remove(w.p); w.lbl.el.remove(); labels.splice(labels.indexOf(w.lbl), 1); walkers.splice(i, 1); w.onArrive && w.onArrive();
+        if (v.preach && v.preach[w.owner]) preacherOf(v, w.owner).visible = true;
       }
     }
     for (let i = effects.length - 1; i >= 0; i--) if (!effects[i](dt)) effects.splice(i, 1);
@@ -1042,8 +1133,8 @@ document.addEventListener('touchmove', e => {
     for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.t += dt; wp.copy(f.pos); wp.y += f.t * 1.2; wp.project(camera); f.el.style.transform = 'translate(' + ((wp.x * .5 + .5) * w).toFixed(1) + 'px,' + ((-wp.y * .5 + .5) * h).toFixed(1) + 'px) translate(-50%,-100%) scale(' + (1 + Math.max(0, .3 - f.t) * 1.5).toFixed(2) + ')'; f.el.style.opacity = Math.max(0, 1 - Math.max(0, f.t - 1.1) / .6); if (f.t > 1.7) { f.el.remove(); floats.splice(i, 1); } }
     if (selected && radial.children.length) {
       selected.anchor.getWorldPosition(wp); wp.project(camera); const sx = (wp.x * .5 + .5) * w, sy = (-wp.y * .5 + .5) * h;
-      const angles = [-150, -90, -30];
-      [...radial.children].forEach((b, i) => { const a = angles[i] * Math.PI / 180, r = 84; let x = sx + Math.cos(a) * r, y = sy + Math.sin(a) * r - 20; x = Math.max(40, Math.min(w - 40, x)); y = Math.max(110, Math.min(h - 260, y)); b.style.left = x + 'px'; b.style.top = y + 'px'; });
+      const angles = radial.children.length > 3 ? [-165, -115, -65, -15] : [-150, -90, -30], low = sheet.hidden ? h - 120 : card.getBoundingClientRect().top - 38;
+      [...radial.children].forEach((b, i) => { const a = angles[i] * Math.PI / 180, r = 84; let x = sx + Math.cos(a) * r, y = sy + Math.sin(a) * r - 20; x = Math.max(40, Math.min(w - 40, x)); y = Math.max(110, Math.min(low, y)); b.style.left = x + 'px'; b.style.top = y + 'px'; });
     }
     requestAnimationFrame(frame);
   }
@@ -1051,7 +1142,7 @@ document.addEventListener('touchmove', e => {
 
   // ---------- Spielstand (Supabase) ----------
   const SB_URL = 'https://txtduemylfrhpfklnntg.supabase.co', SB_KEY = 'sb_publishable_vn3LV4Kk2bm3vn-xkXbAgA_AumkhaaP';
-  const game = { code: null, token: null, events: [], lastEvent: 0, latest: null, pending: 0, live: null, started: false };
+  const game = { code: null, token: null, events: [], lastEvent: 0, latest: null, pending: 0, live: null, started: false, seq: 0, applied: 0 };
   const VBYID = {}; VILLAGES.forEach(v => VBYID[v.id] = v);
   async function rpc(fn, args, keepalive) {
     let r;
@@ -1059,6 +1150,8 @@ document.addEventListener('touchmove', e => {
     catch (e) { throw new Error('Keine Verbindung zu den Göttern. Bitte später noch einmal versuchen.'); }
     const j = r.status === 204 ? null : await r.json().catch(() => null);
     if (!r.ok) throw new Error((j && j.message) || 'Der Himmel schweigt (' + r.status + ').');
+    // Spielstände nummerieren, damit eine späte Antwort keinen neueren Stand überschreibt
+    if (j && j.me) j.seq = ++game.seq;
     return j;
   }
   const saved = {
@@ -1079,6 +1172,13 @@ document.addEventListener('touchmove', e => {
     if (e.action === 'join') return n + (e.god === ME ? ' trittst' : ' tritt') + ' als ' + GOD_LONG[e.god] + ' an.';
     if (e.action === 'regen') return n + ': Regen über ' + vn + ', +' + e.amount + ' Gläubige';
     if (e.action === 'prophet') return n + ': Prophet in ' + vn + ', +' + e.amount + ' Gläubige';
+    if (e.action === 'predigt') return n + (e.god === ME ? ' schickst' : ' schickt') + ' einen Propheten nach ' + vn + '.';
+    if (e.action === 'predigt_ende') return (e.god === ME ? 'Dein' : who(e.god) + 's') + ' Prophet verlässt ' + vn + ', +' + e.amount + ' Gläubige';
+    if (e.action === 'vertrieben') return (e.god === ME ? 'Dein' : who(e.god) + 's') + ' Prophet muss ' + vn + ' verlassen, +' + e.amount + ' Gläubige';
+    if (e.action === 'segen') return n + (e.god === ME ? ' segnest ' : ' segnet ') + vn + '.';
+    if (e.action === 'zorn') return n + (e.god === ME ? ' rufst' : ' ruft') + ' Himmelszorn über ' + vn + ' herab.';
+    if (e.action === 'zorn_trifft') return 'Himmelszorn trifft ' + vn + ', ' + (e.target_god === ME ? 'du verlierst ' : who(e.target_god) + ' verliert ') + -e.amount;
+    if (e.action === 'zorn_verpufft') return (e.god === ME ? 'Dein' : who(e.god) + 's') + ' Himmelszorn verpufft am Schutzsegen über ' + vn + '.';
     if (e.action === 'schrein') return n + (e.god === ME ? ' baust' : ' baut') + ' einen Schrein in ' + vn + '.';
     if (e.action === 'stufe') return n + (e.god === ME ? ' baust' : ' baut') + ' Stufe ' + e.amount + ' der Himmelstreppe.';
     if (e.action === 'sieg') return n + (e.god === ME ? ' hast' : ' hat') + ' die Himmelstreppe vollendet!';
@@ -1104,9 +1204,43 @@ document.addEventListener('touchmove', e => {
     GODS.forEach(k => godObjs[k].label.el.innerHTML = '<i style="background:' + CSSC[k] + '"></i>' + (k === ME ? 'Du' : PLAYERS[k] ? esc(PLAYERS[k]) : 'frei') + ' · ' + GOD[k]);
   }
   function applyVillages(st, quiet) {
-    (st.villages || []).forEach(sv => { const v = VBYID[sv.id]; if (!v) return; GODS.concat('neutral').forEach(k => v.bel[k] = sv[k]); v.hasShrine = !!sv.shrine; v.shrine.g.visible = v.hasShrine; afterChange(v, quiet); });
-    paintTerritories(); paintTally();
+    (st.villages || []).forEach(sv => { const v = VBYID[sv.id]; if (!v) return; GODS.concat('neutral').forEach(k => v.bel[k] = sv[k]); v.hasShrine = !!sv.shrine; v.shrine.g.visible = v.hasShrine; v.shieldUntil = sv.shield_until ? new Date(sv.shield_until).getTime() : 0; v.shieldGod = sv.shield_god; afterChange(v, quiet); });
+    applyFx(st); paintTerritories(); paintTally();
   }
+  const LBL_ICON = {
+    segen: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff1c2" stroke-width="2.4" aria-hidden="true"><path d="M3 19 A9 9 0 0 1 21 19 Z"/></svg>',
+    zorn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16 a5 5 0 0 1 1-10 a6 6 0 0 1 11 2 A4 4 0 0 1 18 16 Z" fill="#9c8ad0"/></svg>'
+  };
+  function applyFx(st) {
+    const now = Date.now();
+    VILLAGES.forEach(v => { v.preach = {}; v.wrath = null; });
+    (st.prophets || []).forEach(p => { const v = VBYID[p.village]; if (v) v.preach[p.god] = p; });
+    (st.wraths || []).forEach(w => { const v = VBYID[w.village]; if (v) v.wrath = w; });
+    VILLAGES.forEach(v => {
+      const shielded = v.shieldUntil > now;
+      if (shielded) { const d = domeOf(v); d.mat.color.setHex(COL[v.shieldGod]); d.edge.material.color.setHex(COL[v.shieldGod]); d.m.visible = true; } else if (v.dome) v.dome.m.visible = false;
+      if (v.wrath) omenOn(v); else omenOff(v);
+      GODS.forEach(k => { if (v.preach[k] && !walkers.some(w => w.toV === v && w.owner === k)) preacherOf(v, k).visible = true; else if (v.preachers && v.preachers[k]) v.preachers[k].visible = false; });
+      v.label.el.innerHTML = '<i style="background:' + CSSC[v.owner] + '"></i>' + v.name + (shielded ? LBL_ICON.segen : '') + (v.wrath ? LBL_ICON.zorn : '');
+    });
+    paintOmen(); refreshRadial();
+    if (selected && !sheet.hidden) renderPanel(selected);
+  }
+  // Leiste oben, solange dunkle Wolken über einem deiner Dörfer hängen
+  const omenEl = document.getElementById('omen');
+  function paintOmen() {
+    const now = Date.now();
+    const w = VILLAGES.map(v => v.wrath && v.wrath.target_god === ME ? v : null).filter(Boolean).filter(v => !(v.shieldUntil > new Date(v.wrath.at).getTime() && v.shieldGod === ME))
+      .sort((a, b) => new Date(a.wrath.at) - new Date(b.wrath.at))[0];
+    omenEl.hidden = !w || ended() || !sheet.hidden; document.body.classList.toggle('has-omen', !omenEl.hidden);
+    if (omenEl.hidden) return;
+    const can = w.owner === ME, cost = ACTIONS.segen.cost;
+    omenEl.innerHTML = '<div>' + ICON.zorn + '<div class="tx"><b>Dunkle Wolken über ' + w.name + '</b><span>' + who(w.wrath.god) + ' ruft Himmelszorn herab. Einschlag in ' + hm(new Date(w.wrath.at) - now) + '</span></div>' +
+      (can ? '<button class="gold-btn" id="omen-btn"' + (faith < cost ? ' disabled' : '') + '>Segnen · ' + cost + '</button>' : '') + '</div>';
+    omenEl.firstChild.addEventListener('click', () => select(w));
+    const b = document.getElementById('omen-btn'); if (b) b.addEventListener('click', e => { e.stopPropagation(); select(w); doAction('segen'); });
+  }
+  setInterval(() => { if (game.latest) { paintOmen(); if (selected && !sheet.hidden) renderPanel(selected); } }, 30000);
   function paintTally() {
     const n = VILLAGES.filter(v => v.owner === ME).length;
     document.getElementById('tally-v').textContent = n; document.getElementById('tally-vl').textContent = n === 1 ? 'Dorf' : 'Dörfer';
@@ -1114,6 +1248,8 @@ document.addEventListener('touchmove', e => {
   }
   // Übernimmt einen Spielstand vom Server. Fremde Wunder werden erst abgespielt, dann sichtbar.
   function applyState(st) {
+    if (st.seq && st.seq < game.applied) return;
+    game.applied = st.seq || game.applied;
     game.latest = st; game.events = st.events || [];
     applyPlayers(st);
     setFaith(st.me.faith); faithNext = st.me.next_in; setGifts(st.me.gifts);
@@ -1127,10 +1263,12 @@ document.addEventListener('touchmove', e => {
       toast(plain(eventText(e)));
       if (e.action === 'stufe') { stairBurst(e.god); return; }
       if (e.action === 'schrein' && VBYID[e.village]) { const sv = VBYID[e.village]; sparkleBurst(new THREE.Vector3(sv.x - .38, heightAt(sv.x, sv.z) + .8, sv.z - .62), COL[e.god], 70); return; }
-      if (e.action === 'sieg') return;
+      if (e.action === 'sieg' || e.action === 'predigt_ende' || e.action === 'vertrieben') return;
+      if (e.action === 'zorn_trifft' && VBYID[e.village]) { const zv = VBYID[e.village]; omenOff(zv); lightningOn(zv, () => showAmount(zv, e)); setTimeout(() => lightningOn(zv), 350); wait = Math.max(wait, 1.7); return; }
+      if (e.action === 'zorn_verpufft' && VBYID[e.village]) { const zv = VBYID[e.village]; omenOff(zv); if (zv.dome) zv.dome.pulse = 1.5; return; }
       const v = VBYID[e.village], a = ACTIONS[e.action];
       if (!v || !a) return;
-      wait = Math.max(wait, e.action === 'prophet' ? 8.2 : 1.7);
+      wait = Math.max(wait, e.action === 'prophet' || e.action === 'predigt' ? 8.2 : 1.7);
       a.play(v, e.god, () => showAmount(v, e));
     });
     if (wait) setTimeout(() => applyVillages(game.latest), wait * 1000); else applyVillages(st);
