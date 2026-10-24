@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1a33">
-<title>Götterwettstreit 0.3.1</title>
+<title>Götterwettstreit 0.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@700;800;900&display=swap">
 <style>
@@ -241,7 +241,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.4 · Stand 1';
+  const BUILD = 'Version 0.4 · Stand 2';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -1075,6 +1075,12 @@ document.addEventListener('touchmove', e => {
     if (!resize.done) { const k = w / h < .8 ? 1.35 : 1; camera.position.set(17 * k, 14 * k, 19 * k); resize.done = true; }
   }
   addEventListener('resize', resize); resize();
+  // iOS lässt nach dem Schließen der Tastatur (Name, Spielcode) die Seite manchmal verschoben oder zu kurz stehen.
+  // Dann zurückschieben und die Insel neu vermessen, damit sie wieder bis zum unteren Rand reicht.
+  function unshift() { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); resize(); }
+  document.addEventListener('focusout', () => setTimeout(unshift, 60));
+  if (window.visualViewport) visualViewport.addEventListener('resize', unshift);
+  addEventListener('orientationchange', () => setTimeout(unshift, 300));
 
   // ---------- loop ----------
   const clock = new THREE.Clock(), wp = new THREE.Vector3(), tv = new THREE.Vector3(), basePos = new THREE.Vector3();
