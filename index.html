@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1a33">
+<script>if (navigator.standalone) document.documentElement.classList.add('app');</script>
 <title>Götterwettstreit 0.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@700;800;900&display=swap">
@@ -29,10 +30,13 @@
 }
 /* Die Seite selbst bewegt sich nie: kein Gummiband-Scrollen und kein Verschieben auf dem iPhone. */
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+/* iOS 26 macht die Home-Bildschirm-App um die Statusleiste zu kurz, solange die Seite nicht höher als der Bildschirm ist (WebKit 301108). */
+html.app { min-height: min(100lvh, calc(100% + env(safe-area-inset-top, 0px))); }
+@media (display-mode: standalone) { html { min-height: min(100lvh, calc(100% + env(safe-area-inset-top, 0px))); } }
 [hidden] { display: none !important; }
 body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f1a33; color: var(--cream); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-#scene { position: fixed; left: 0; top: 0; width: 100%; height: calc(100% + var(--unten, 0px)); display: block; touch-action: none; outline: none; }
-.labels { position: fixed; inset: 0; bottom: calc(-1 * var(--unten, 0px)); pointer-events: none; overflow: hidden; }
+#scene { position: fixed; left: 0; top: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
 .lbl { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(14, 16, 22, 0.78); color: var(--cream); display: flex; align-items: center; gap: 5px; will-change: transform; }
 .lbl i { width: 7px; height: 7px; border-radius: 50%; }
 .lbl.god { font-family: var(--display); font-size: 11.5px; letter-spacing: 0.04em; background: rgba(14, 16, 22, 0.6); }
@@ -78,13 +82,13 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .rbtn:active { transform: translate(-50%, -46%); }
 @keyframes pop { from { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 
-.dock { position: fixed; left: 0; right: 0; bottom: calc(-1 * var(--unten, 0px)); display: flex; justify-content: center; gap: 22px; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); padding-block: 0 calc(env(safe-area-inset-bottom, 0px) + 16px); pointer-events: none; }
+.dock { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 22px; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); padding-block: 0 calc(env(safe-area-inset-bottom, 0px) + 16px); pointer-events: none; }
 .orb { pointer-events: auto; appearance: none; border: 0; background: transparent; color: var(--cream); display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; font: 900 12px var(--body); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
 .orb span.ring { width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--gold); background: radial-gradient(circle at 35% 30%, #4a5164, #171a23 72%); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
 .orb:active span.ring { transform: translateY(3px); box-shadow: 0 2px 0 #07080b, 0 0 0 5px rgba(243, 194, 90, 0.16); }
 .orb svg { width: 28px; height: 28px; }
 
-.sheet { position: fixed; left: 0; right: 0; bottom: calc(-1 * var(--unten, 0px)); padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); padding-block: 0 calc(env(safe-area-inset-bottom, 0px) + 14px); pointer-events: none; z-index: 5; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); padding-block: 0 calc(env(safe-area-inset-bottom, 0px) + 14px); pointer-events: none; z-index: 5; }
 .card { pointer-events: auto; max-width: 520px; margin: 0 auto; background: linear-gradient(#262b38, #14171f); border: 1px solid var(--edge); border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08); animation: up 0.22s ease-out; max-height: 62vh; overflow-y: auto; }
 @keyframes up { from { transform: translateY(24px); opacity: 0.3; } to { transform: none; opacity: 1; } }
 .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -123,7 +127,7 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .rank .mini { height: 7px; border-radius: 4px; background: #0b0d12; overflow: hidden; }
 .rank .mini i { display: block; height: 100%; border-radius: 4px; }
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
-.lobby { position: fixed; inset: 0; bottom: calc(-1 * var(--unten, 0px)); z-index: 20; overscroll-behavior: contain; touch-action: pan-y; overflow-x: hidden; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px)); background: radial-gradient(ellipse at 50% 40%, rgba(10, 12, 20, 0.35), rgba(10, 12, 20, 0.82)); overflow-y: auto; }
+.lobby { position: fixed; inset: 0; z-index: 20; overscroll-behavior: contain; touch-action: pan-y; overflow-x: hidden; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px)); background: radial-gradient(ellipse at 50% 40%, rgba(10, 12, 20, 0.35), rgba(10, 12, 20, 0.82)); overflow-y: auto; }
 .lcard { width: 100%; max-width: 400px; background: linear-gradient(#262b38, #14171f); border: 1px solid var(--edge); border-radius: 22px; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
 .lcard h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 26px; color: var(--gold); text-align: center; letter-spacing: 0.03em; }
 .lcard .sub { margin: -4px 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); }
@@ -241,7 +245,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.4 · Stand 4';
+  const BUILD = 'Version 0.4 · Stand 5';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -1069,17 +1073,8 @@ document.addEventListener('touchmove', e => {
   }
 
   // ---------- sizing ----------
-  // Als App vom Home-Bildschirm (Statusleiste durchscheinend) ist die Seite auf manchen iPhones um die Höhe
-  // der Statusleiste zu kurz, unten bleibt ein Streifen. Den Fehlbetrag messen und Insel, Leiste und Fenster
-  // um genau so viel nach unten verlängern (--unten). In Safari und am Rechner ist er 0.
   let viewH = innerHeight;
-  const probe = document.createElement('div');
-  probe.style.cssText = 'position:fixed;left:0;top:0;bottom:0;width:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';
-  document.body.appendChild(probe);
   function resize() {
-    const top = parseFloat(getComputedStyle(probe).paddingTop) || 0, gap = Math.round(screen.height - probe.getBoundingClientRect().height);
-    const fix = innerWidth < innerHeight && top > 0 && gap > 0 && Math.abs(gap - top) <= 2 ? gap : 0;
-    document.documentElement.style.setProperty('--unten', fix + 'px');
     viewH = canvas.getBoundingClientRect().height || innerHeight;
     const w = innerWidth, h = viewH; renderer.setSize(w, h, false); camera.aspect = w / h;
     camera.fov = w / h < .8 ? 50 : 40; camera.updateProjectionMatrix();
