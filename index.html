@@ -7,7 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1a33">
 <script>if (navigator.standalone) document.documentElement.classList.add('app');</script>
-<title>Götterwettstreit 0.4</title>
+<title>Götterwettstreit 0.5</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@700;800;900&display=swap">
 <style>
@@ -171,6 +173,24 @@ body.has-omen .toasts { top: calc(env(safe-area-inset-top, 0px) + 184px); }
 .fx small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 700; }
 .fx.dark { border-color: rgba(172, 150, 220, 0.5); background: rgba(96, 74, 140, 0.18); }
 .lbl svg { width: 12px; height: 12px; }
+.card > * { flex-shrink: 0; }
+.rank .side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-variant-numeric: tabular-nums; }
+.give { appearance: none; border: 1px solid rgba(243, 194, 90, 0.55); background: rgba(243, 194, 90, 0.1); color: var(--gold); font: 900 12px var(--body); min-height: 32px; padding: 0 10px 0 7px; border-radius: 999px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.give svg { width: 16px; height: 16px; }
+.give:disabled { opacity: 0.45; cursor: not-allowed; }
+.awake { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; color: var(--muted); }
+.awake svg { width: 18px; height: 8px; flex-shrink: 0; }
+.awake.on { color: var(--cream); }
+.notify { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 8px 8px 8px 10px; }
+.notify > svg { width: 24px; height: 24px; flex-shrink: 0; }
+.notify span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 13px; font-weight: 800; }
+.notify small { font-size: 11.5px; color: var(--muted); font-weight: 700; line-height: 1.3; }
+.amounts { display: flex; gap: 8px; }
+.amt { appearance: none; flex: 1; min-height: 52px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); color: var(--cream); font: 900 18px var(--display); cursor: pointer; }
+.amt.on, .vbtn.on { border-color: var(--gold); background: rgba(243, 194, 90, 0.14); color: var(--gold); }
+.amt:disabled { opacity: 0.4; cursor: not-allowed; }
+.hint { margin: -2px 0 0; font-size: 12px; font-weight: 700; color: var(--muted); }
+.wide { width: 100%; margin-top: 2px; }
 @media (max-width: 380px) { .faith .bar { width: 70px; } .god .nm { font-size: 13px; } .row { gap: 9px; padding: 9px; } .row .ill { width: 46px; height: 46px; border-radius: 12px; } .row .ill svg { width: 40px; height: 40px; } .row .gold-btn { padding: 0 12px; } }
 @media (prefers-reduced-motion: reduce) { .rbtn, .card, .toast { animation: none; } }
 </style>
@@ -245,7 +265,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.4 · Stand 5';
+  const BUILD = 'Version 0.5 · Stand 1';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -555,6 +575,7 @@ document.addEventListener('touchmove', e => {
     const runeMat = glowMat(color, 1.4);
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r = new THREE.Mesh(new THREE.BoxGeometry(.16, .05, .3), runeMat); r.position.set(Math.cos(a) * 1.95, Math.sin(a) * 1.95, 0); r.rotation.z = a; ring.add(r); }
     const glow = glowSprite(color, 4.5); glow.position.z = -.6; g.add(glow);
+    g.userData.glow = [eyeMat, runeMat];
     shade(body);
     return { g, body, ring, eyeMat, runeMat };
   }
@@ -584,7 +605,7 @@ document.addEventListener('touchmove', e => {
     return I.g;
   }
   function chaosIdol() {
-    const I = idolBase(0x1c1a20, COL.pink), horn = stoneMat(0x2a2228), crack = glowMat(COL.pink, 2);
+    const I = idolBase(0x1c1a20, COL.pink), horn = stoneMat(0x2a2228), crack = glowMat(COL.pink, 2); I.g.userData.glow.push(crack);
     [-1, 1].forEach(s => { const h1 = new THREE.Mesh(new THREE.ConeGeometry(.2, 1.1, 5), horn); h1.position.set(s * .75, 1.05, -.05); h1.rotation.z = -s * .7; I.body.add(h1); const h2 = new THREE.Mesh(new THREE.ConeGeometry(.12, .7, 5), horn); h2.position.set(s * 1.25, 1.55, -.05); h2.rotation.z = -s * .15; I.body.add(h2); });
     [[-.15, .55, .2, .7], [.35, -.35, -.5, .55], [-.45, -.5, .9, .4]].forEach(([x, y, rz, l]) => { const c = new THREE.Mesh(new THREE.BoxGeometry(.035, l, .03), crack); c.position.set(x, y, .84); c.rotation.z = rz; I.body.add(c); });
     const shards = new THREE.Group(); I.g.add(shards);
@@ -600,6 +621,16 @@ document.addEventListener('touchmove', e => {
     godObjs[k] = { tp, av, holder };
     godObjs[k].label = addLabel('<i style="background:' + CSSC[k] + '"></i>' + GOD[k], 'god', anchor, 0);
   });
+
+  // Wache Götter: Augen und Runen glühen nur, solange der Spieler im Spiel ist; sonst dunkler Stein
+  function setAwake(k, on) {
+    const o = godObjs[k]; if (o.awake === on) return; o.awake = on;
+    o.av.userData.glow.forEach(m => {
+      if (!m.userData.c) m.userData.c = [m.color.getHex(), m.emissive.getHex()];
+      m.color.setHex(m.userData.c[0]); m.emissive.setHex(m.userData.c[1]);
+      if (!on) { m.color.multiplyScalar(.35); m.emissive.multiplyScalar(.12); }
+    });
+  }
 
   // Himmelstreppe: gebaut ist, was der weiteste Gott erreicht hat; jeder Gott hat ein Licht auf seiner Stufe
   const stair = { solid: [], ghost: [], orbs: {} };
@@ -1057,19 +1088,110 @@ document.addEventListener('touchmove', e => {
     card.querySelectorAll('[data-shrine]').forEach(b => b.addEventListener('click', () => doBuild('schrein', VBYID[b.dataset.shrine])));
   }
   document.getElementById('dock-goetter').addEventListener('click', () => { sfx.tap(); openGods(); });
+  const GIFT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9 H17 L15.5 20 H8.5 Z" fill="#c98a3a"/><path d="M6 9 H18" stroke="#f3c25a" stroke-width="2" stroke-linecap="round"/><path d="M9 9 C9 6 10.5 4 12 4 C13.5 4 15 6 15 9" fill="none" stroke="#8fe3a6" stroke-width="1.8"/></svg>';
+  const BELL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#f3c25a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 16 V11 a6 6 0 0 1 12 0 V16 L19.5 18 H4.5 Z"/><path d="M10 20.5 a2 2 0 0 0 4 0"/></svg>';
+  const EYES_ICON = c => '<svg viewBox="0 0 18 8" aria-hidden="true"><path d="M1 3 L7 5 L7 6.5 L1 4.6 Z M17 3 L11 5 L11 6.5 L17 4.6 Z" fill="' + c + '"/></svg>';
+  function sleepFor(ts) {
+    const m = Math.max(1, Math.floor((Date.now() - new Date(ts).getTime()) / 60000)), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    return d ? d + (d === 1 ? ' Tag' : ' Tagen') : h ? h + ' Std.' : m + ' Min.';
+  }
   function openGods() {
     const tot = {}; GODS.forEach(k => tot[k] = 0); VILLAGES.forEach(v => GODS.forEach(k => tot[k] += v.bel[k]));
-    const list = GODS.filter(k => PLAYERS[k]).sort((a, b) => tot[b] - tot[a]), max = Math.max(1, ...list.map(k => tot[k]));
+    const list = GODS.filter(k => PLAYERS[k]).sort((a, b) => tot[b] - tot[a]);
     const free = ended() ? 0 : GODS.length - list.length;
-    const st = game.latest, stairsOf = k => ((st && st.players || []).find(p => p.god === k) || {}).stairs || 0, owned = k => VILLAGES.filter(v => v.owner === k).length;
+    const st = game.latest, pl = k => (st && st.players || []).find(p => p.god === k) || {}, stairsOf = k => pl(k).stairs || 0, owned = k => VILLAGES.filter(v => v.owner === k).length;
     list.sort((a, b) => stairsOf(b) - stairsOf(a) || tot[b] - tot[a]);
     openSheet('<div class="card-head"><div><h2 id="card-title">Götter</h2><p>' + (ended() ? who(st.winner) + (st.winner === ME ? ' hast' : ' hat') + ' die Himmelstreppe vollendet.' : 'Wer zuerst Stufe 7 der Himmelstreppe baut, gewinnt.') + '</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
-      list.map((k, i) => '<div class="rank"><span class="pos">' + (i + 1) + '</span><div class="who"><span>' + (k === ME ? 'Du' : esc(PLAYERS[k])) + ' · ' + GOD_LONG[k] + '</span><div class="mini"><i style="width:' + (stairsOf(k) / 7 * 100) + '%;background:' + CSSC[k] + '"></i></div><span class="d" style="font-size:11.5px;color:var(--muted)">' + tot[k] + ' Gläubige · ' + owned(k) + (owned(k) === 1 ? ' Dorf' : ' Dörfer') + '</span></div><span style="font-variant-numeric:tabular-nums">Stufe ' + stairsOf(k) + '</span></div>').join('') +
+      list.map((k, i) => '<div class="rank"><span class="pos">' + (i + 1) + '</span><div class="who"><span>' + (k === ME ? 'Du' : esc(PLAYERS[k])) + ' · ' + GOD_LONG[k] + '</span><div class="mini"><i style="width:' + (stairsOf(k) / 7 * 100) + '%;background:' + CSSC[k] + '"></i></div><span class="d" style="font-size:11.5px;color:var(--muted)">' + tot[k] + ' Gläubige · ' + owned(k) + (owned(k) === 1 ? ' Dorf' : ' Dörfer') + '</span>' +
+        (k === ME ? '' : '<span class="awake' + (pl(k).awake ? ' on' : '') + '">' + EYES_ICON(pl(k).awake ? CSSC[k] : '#5d6478') + (pl(k).awake ? 'wach' : 'schläft seit ' + sleepFor(pl(k).seen)) + '</span>') + '</div>' +
+        '<div class="side"><span>Stufe ' + stairsOf(k) + '</span>' + (k === ME || ended() ? '' : '<button class="give" data-give="' + k + '">' + GIFT_ICON + 'Opfern</button>') + '</div></div>').join('') +
+      notifyRow() +
       (free ? '<div class="invite"><span>Spielcode <b>' + esc(game.code) + '</b><br>' + free + (free === 1 ? ' Gott ist' : ' Götter sind') + ' noch frei</span><button class="gold-btn" id="invite-btn">Einladen</button></div>' : '') +
       '<h3 class="sec">Chronik</h3>' + chronicle(game.events.slice(-15).reverse()) +
       '<button class="linkish" id="new-game">Spiel wechseln, erstellen oder beitreten</button><p class="build">' + BUILD + '</p>');
     const ib = document.getElementById('invite-btn'); if (ib) ib.addEventListener('click', invite);
+    card.querySelectorAll('[data-give]').forEach(b => b.addEventListener('click', () => { sfx.tap(); openGive(b.dataset.give); }));
+    const pb = document.getElementById('push-btn'); if (pb) pb.addEventListener('click', () => { sfx.tap(); pb.disabled = true; (push.on() ? pushOff : pushOn)(); });
     document.getElementById('new-game').addEventListener('click', () => { closeSheet(); showLobby('create'); });
+  }
+
+  // Opfergabe an einen anderen Gott: 10, 25 oder 50 Gaben, freiwillig mit Zeichen, höchstens 50 am Tag
+  const give = { amount: 25, sign: null };
+  function openGive(k) {
+    const st = game.latest; if (!st || !PLAYERS[k]) return;
+    const left = st.me.gift_left == null ? 50 : st.me.gift_left;
+    if (give.amount > Math.min(left, gifts)) give.amount = [50, 25, 10].find(a => a <= Math.min(left, gifts)) || 10;
+    const can = give.amount <= left && give.amount <= gifts && !ended();
+    openSheet('<div class="card-head"><div><h2 id="card-title">Opfergabe an ' + esc(PLAYERS[k]) + '</h2><p>' + GOD_LONG[k] + ' · Alle Götter sehen es in der Chronik.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' +
+      '<h3 class="sec">Wie viele Gaben?</h3><div class="amounts">' + [10, 25, 50].map(a => '<button class="amt' + (a === give.amount ? ' on' : '') + '" data-amt="' + a + '"' + (a > left || a > gifts ? ' disabled' : '') + '>' + a + '</button>').join('') + '</div>' +
+      '<p class="hint">Dein Vorrat: ' + gifts + ' Gaben · ' + (left ? 'heute noch ' + left + ' möglich' : 'heute nichts mehr möglich') + '</p>' +
+      '<h3 class="sec">Zeichen dazu (freiwillig)</h3><div class="chips">' + Object.keys(SIGNS).concat('').map(z => '<button class="vbtn' + ((give.sign || '') === z ? ' on' : '') + '" data-sign="' + z + '">' + (SIGNS[z] || 'ohne') + '</button>').join('') + '</div>' +
+      '<button class="gold-btn wide" id="give-btn"' + (can ? '' : ' disabled') + '>' + give.amount + ' Gaben opfern</button>');
+    card.querySelectorAll('[data-amt]').forEach(b => b.addEventListener('click', () => { sfx.tap(); give.amount = +b.dataset.amt; openGive(k); }));
+    card.querySelectorAll('[data-sign]').forEach(b => b.addEventListener('click', () => { sfx.tap(); give.sign = b.dataset.sign || null; openGive(k); }));
+    document.getElementById('give-btn').addEventListener('click', () => doGive(k));
+  }
+  function doGive(k) {
+    if (!game.token || ended()) return;
+    const btns = card.querySelectorAll('button:not(.x)'); btns.forEach(b => b.disabled = true);
+    game.pending++;
+    rpc('give_gifts', { p_token: game.token, p_god: k, p_amount: give.amount, p_sign: give.sign }).then(st => {
+      sfx.fanfare(); sparkleBurst(godObjs[k].holder.getWorldPosition(new THREE.Vector3()), COL[ME], 70);
+      toast('Du opferst ' + esc(PLAYERS[k]) + ' ' + give.amount + ' Gaben.', true);
+      game.pending--; applyState(st); openGods();
+    }).catch(err => { game.pending--; toast(err.message); refresh(); btns.forEach(b => b.disabled = false); });
+  }
+
+  // ---------- Mitteilungen aufs iPhone ----------
+  // Nur in der App vom Home-Bildschirm. Der Service Worker zeigt sie an, der Server verschickt sie.
+  const push = {
+    can: () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+    app: () => !!navigator.standalone || matchMedia('(display-mode: standalone)').matches,
+    on: () => { try { return localStorage.getItem('gw-push') === '1' && Notification.permission === 'granted'; } catch (e) { return false; } },
+    set: on => { try { if (on) localStorage.setItem('gw-push', '1'); else localStorage.removeItem('gw-push'); } catch (e) {} },
+    base: () => location.origin + location.pathname
+  };
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  function notifyRow() {
+    let txt, btn = '';
+    if (!push.can() || !push.app()) txt = 'Nur in der App vom Home-Bildschirm: Teilen, dann „Zum Home-Bildschirm“.';
+    else if (Notification.permission === 'denied') txt = 'Abgelehnt. Erlauben kannst du sie in den iPhone-Einstellungen unter Mitteilungen.';
+    else if (push.on()) { txt = 'Eingeschaltet für dieses iPhone'; btn = '<button class="give" id="push-btn">Ausschalten</button>'; }
+    else { txt = 'Bei dunklen Wolken, Angriffen und Opfergaben'; btn = '<button class="pill-btn" id="push-btn">Einschalten</button>'; }
+    return '<div class="notify">' + BELL_ICON + '<span>Mitteilungen<small>' + txt + '</small></span>' + btn + '</div>';
+  }
+  function b64u(s) { const b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+  async function pushRegister(sub, tokens) {
+    const j = sub.toJSON();
+    await Promise.all(tokens.map(t => rpc('push_subscribe', { p_token: t, p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_base: push.base() }).catch(() => {})));
+  }
+  async function pushOn() {
+    try {
+      // Die Erlaubnis muss direkt aus dem Antippen heraus angefragt werden
+      if (await Notification.requestPermission() !== 'granted') { toast('Ohne deine Erlaubnis gibt es keine Mitteilungen.'); return; }
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(await rpc('push_key', {})) });
+      await pushRegister(sub, Object.values(saved.all()));
+      push.set(true); toast('Mitteilungen sind eingeschaltet.');
+    } catch (e) { toast('Mitteilungen ließen sich nicht einschalten.'); }
+    finally { if (!sheet.hidden && document.getElementById('push-btn')) openGods(); }
+  }
+  async function pushOff() {
+    try {
+      const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+      if (sub) { await rpc('push_unsubscribe', { p_endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); }
+    } catch (e) {}
+    push.set(false); toast('Mitteilungen sind ausgeschaltet.');
+    if (!sheet.hidden && document.getElementById('push-btn')) openGods();
+  }
+  // Neue Spiele auf diesem iPhone gleich mit anmelden
+  async function pushJoin(token) {
+    if (!push.can() || !push.on()) return;
+    try {
+      const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+      if (sub) await pushRegister(sub, [token]); else push.set(false);
+    } catch (e) {}
   }
 
   // ---------- sizing ----------
@@ -1179,6 +1301,7 @@ document.addEventListener('touchmove', e => {
     teal: ['#6fd394', '#1f6b3a', '<path d="M12 22 V10" stroke="#0e3a1e" stroke-width="2"/><path d="M12 11 C7 11 5 7 5 3 C10 3 12 7 12 11 Z M12 15 C17 15 19 11 19 7 C14 7 12 11 12 15 Z" fill="#0e3a1e"/>'],
     pink: ['#e2475a', '#6e1622', '<path d="M4 3 C4 10 8 14 12 14 C16 14 20 10 20 3 C18 8 15 11 12 11 C9 11 6 8 4 3 Z" fill="#3a0a12"/><path d="M12 14 L10 18 L13 19 L11 22" stroke="#3a0a12" stroke-width="1.8" fill="none"/>']
   };
+  const SIGNS = { friede: 'Friede', buendnis: 'Bündnis', dank: 'Dank' };
   function eventText(e) {
     const n = who(e.god), vn = e.village && VBYID[e.village] ? VBYID[e.village].name : '';
     if (e.action === 'join') return n + (e.god === ME ? ' trittst' : ' tritt') + ' als ' + GOD_LONG[e.god] + ' an.';
@@ -1193,6 +1316,7 @@ document.addEventListener('touchmove', e => {
     if (e.action === 'zorn_verpufft') return (e.god === ME ? 'Dein' : who(e.god) + 's') + ' Himmelszorn verpufft am Schutzsegen über ' + vn + '.';
     if (e.action === 'schrein') return n + (e.god === ME ? ' baust' : ' baut') + ' einen Schrein in ' + vn + '.';
     if (e.action === 'stufe') return n + (e.god === ME ? ' baust' : ' baut') + ' Stufe ' + e.amount + ' der Himmelstreppe.';
+    if (e.action === 'opfer') return n + (e.god === ME ? ' opferst ' : ' opfert ') + (e.target_god === ME ? 'dir' : who(e.target_god)) + ' ' + e.amount + ' Gaben' + (SIGNS[e.note] ? ' · ' + SIGNS[e.note] : '');
     if (e.action === 'sieg') return n + (e.god === ME ? ' hast' : ' hat') + ' die Himmelstreppe vollendet!';
     if (e.action === 'blitz') return e.target_god ? n + ': Blitz auf ' + vn + ', ' + (e.target_god === ME ? 'du verlierst ' : who(e.target_god) + ' verliert ') + -e.amount : n + ': Blitz auf ' + vn + ', +' + e.amount + ' aus Furcht';
     return '';
@@ -1213,6 +1337,7 @@ document.addEventListener('touchmove', e => {
     medal.style.background = 'radial-gradient(circle at 40% 35%, ' + m[0] + ', ' + m[1] + ' 70%)';
     medal.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24">' + m[2] + '</svg>';
     document.getElementById('god-name').textContent = GOD_LONG[ME];
+    GODS.forEach(k => { const p = (st.players || []).find(q => q.god === k); setAwake(k, k === ME || !!(p && p.awake)); });
     GODS.forEach(k => godObjs[k].label.el.innerHTML = '<i style="background:' + CSSC[k] + '"></i>' + (k === ME ? 'Du' : PLAYERS[k] ? esc(PLAYERS[k]) : 'frei') + ' · ' + GOD[k]);
   }
   function applyVillages(st, quiet) {
@@ -1275,6 +1400,7 @@ document.addEventListener('touchmove', e => {
       toast(plain(eventText(e)));
       if (e.action === 'stufe') { stairBurst(e.god); return; }
       if (e.action === 'schrein' && VBYID[e.village]) { const sv = VBYID[e.village]; sparkleBurst(new THREE.Vector3(sv.x - .38, heightAt(sv.x, sv.z) + .8, sv.z - .62), COL[e.god], 70); return; }
+      if (e.action === 'opfer' && godObjs[e.target_god]) { sparkleBurst(godObjs[e.target_god].holder.getWorldPosition(new THREE.Vector3()), COL[e.god], 70); return; }
       if (e.action === 'sieg' || e.action === 'predigt_ende' || e.action === 'vertrieben') return;
       if (e.action === 'zorn_trifft' && VBYID[e.village]) { const zv = VBYID[e.village]; omenOff(zv); lightningOn(zv, () => showAmount(zv, e)); setTimeout(() => lightningOn(zv), 350); wait = Math.max(wait, 1.7); return; }
       if (e.action === 'zorn_verpufft' && VBYID[e.village]) { const zv = VBYID[e.village]; omenOff(zv); if (zv.dome) zv.dome.pulse = 1.5; return; }
@@ -1313,11 +1439,12 @@ document.addEventListener('touchmove', e => {
   setInterval(() => { if (!document.hidden) refresh(); }, 30000);
   document.addEventListener('visibilitychange', () => {
     if (!game.token) return;
-    if (document.hidden) rpc('mark_seen', { p_token: game.token }, true).catch(() => {}); else refresh();
+    if (document.hidden) rpc('leave_game', { p_token: game.token }, true).catch(() => {}); else refresh();
   });
 
   async function startGame(code, token) {
     const st = await rpc('get_state', { p_token: token });
+    if (game.token && game.token !== token) rpc('leave_game', { p_token: game.token }).catch(() => {});
     game.code = st.code; game.token = token; game.started = false; game.lastEvent = 0; game.shownWin = false;
     if (game.live) { try { game.live.unsubscribe(); } catch (e) {} game.live = null; }
     saved.put(game.code, token); saved.putInfo(game.code, st.me.name + ' als ' + GOD_LONG[st.me.god] + ', ' + st.players.length + ' Spieler');
@@ -1331,6 +1458,7 @@ document.addEventListener('touchmove', e => {
     else if (missed.length) openSheet('<div class="card-head"><div><h2 id="card-title">Seit deinem letzten Besuch</h2><p>Das haben die anderen Götter getan.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' + chronicle(missed.reverse()));
     else setTimeout(() => toast('Tippe ein Dorf an, um ein Wunder zu wirken.'), 800);
     rpc('mark_seen', { p_token: token }).catch(() => {});
+    pushJoin(token);
   }
   async function invite() {
     const url = location.href.split('#')[0], text = 'Tritt meinem Götterwettstreit bei! Spielcode: ' + game.code;
