@@ -130,8 +130,8 @@ body { position: fixed; inset: 0; margin: 0; touch-action: none; background: #0f
 .rank .mini i { display: block; height: 100%; border-radius: 4px; }
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .lobby { position: fixed; inset: 0; z-index: 20; overscroll-behavior: contain; touch-action: pan-y; overflow-x: hidden; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px)); background: radial-gradient(ellipse at 50% 40%, rgba(10, 12, 20, 0.35), rgba(10, 12, 20, 0.82)); overflow-y: auto; }
-.lcard { width: 100%; max-width: 400px; background: linear-gradient(#262b38, #14171f); border: 1px solid var(--edge); border-radius: 22px; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
-.lcard h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 26px; color: var(--gold); text-align: center; letter-spacing: 0.03em; }
+.lcard { box-sizing: border-box; width: 100%; max-width: 400px; background: linear-gradient(#262b38, #14171f); border: 1px solid var(--edge); border-radius: 22px; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
+.lcard h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: min(26px, 7.4vw); color: var(--gold); text-align: center; letter-spacing: 0.03em; }
 .lcard .sub { margin: -4px 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); }
 .lcard label { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 800; color: var(--muted); }
 .lcard input { appearance: none; border: 1px solid rgba(243, 194, 90, 0.45); background: #0f1219; color: var(--cream); border-radius: 12px; min-height: 46px; padding: 0 12px; font: 800 16px var(--body); }
@@ -139,7 +139,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .gods { display: flex; flex-direction: column; gap: 8px; }
 .gpick { appearance: none; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); color: var(--cream); font: 800 14px var(--body); text-align: left; cursor: pointer; }
 .gpick i { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-.gpick small { margin-left: auto; color: var(--muted); font-size: 12px; }
+.gpick small { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.gpick .me { color: var(--gold); text-decoration: underline; }
 .gpick[aria-pressed="true"] { border-color: var(--gold); background: rgba(243, 194, 90, 0.12); }
 .gpick:disabled { opacity: 0.45; cursor: not-allowed; }
 .lcard .alt { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; font-weight: 800; color: var(--muted); border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; }
@@ -182,6 +183,7 @@ body.has-omen .toasts { top: calc(env(safe-area-inset-top, 0px) + 184px); }
 .awake svg { width: 18px; height: 8px; flex-shrink: 0; }
 .awake.on { color: var(--cream); }
 .notify { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 8px 8px 8px 10px; }
+.notify b.rc { font-family: var(--display); color: var(--gold); letter-spacing: 0.12em; font-size: 15px; }
 .notify > svg { width: 24px; height: 24px; flex-shrink: 0; }
 .notify span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 13px; font-weight: 800; }
 .notify small { font-size: 11.5px; color: var(--muted); font-weight: 700; line-height: 1.3; }
@@ -236,6 +238,7 @@ body.has-omen .toasts { top: calc(env(safe-area-inset-top, 0px) + 184px); }
     <h1>Götterwettstreit</h1>
     <p class="sub" id="lobby-sub"></p>
     <label>Dein Name<input id="lobby-name" maxlength="20" autocomplete="nickname" required></label>
+    <label hidden><span id="lobby-rc-label">Rückkehr-Code</span><input id="lobby-rc" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="z. B. K7Q-M2X" style="text-transform: uppercase; letter-spacing: 0.15em"></label>
     <div class="gods" id="lobby-gods" role="group" aria-label="Gott wählen"></div>
     <button class="gold-btn" id="lobby-go" type="button"></button>
     <p class="err" id="lobby-err" role="alert"></p>
@@ -265,7 +268,7 @@ document.addEventListener('touchmove', e => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const COL = { gold: 0xf2b632, teal: 0x34c46a, pink: 0xd8364a, neutral: 0xd8cfc0 };
   const CSSC = { gold: '#f2b632', teal: '#34c46a', pink: '#e2475a', neutral: '#a9b0c2' };
-  const BUILD = 'Version 0.5 · Stand 1';
+  const BUILD = 'Version 0.5.1 · Stand 1';
   const GODS = ['gold', 'teal', 'pink'];
   const GOD = { gold: 'Donner', teal: 'Ernte', pink: 'Chaos' };
   const GOD_LONG = { gold: 'Gott des Donners', teal: 'Göttin der Ernte', pink: 'Gott des Chaos' };
@@ -1090,6 +1093,7 @@ document.addEventListener('touchmove', e => {
   document.getElementById('dock-goetter').addEventListener('click', () => { sfx.tap(); openGods(); });
   const GIFT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9 H17 L15.5 20 H8.5 Z" fill="#c98a3a"/><path d="M6 9 H18" stroke="#f3c25a" stroke-width="2" stroke-linecap="round"/><path d="M9 9 C9 6 10.5 4 12 4 C13.5 4 15 6 15 9" fill="none" stroke="#8fe3a6" stroke-width="1.8"/></svg>';
   const BELL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#f3c25a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 16 V11 a6 6 0 0 1 12 0 V16 L19.5 18 H4.5 Z"/><path d="M10 20.5 a2 2 0 0 0 4 0"/></svg>';
+  const KEY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#f3c25a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="12" r="4"/><path d="M12 12 H21 M18 12 V15 M15.5 12 V14"/></svg>';
   const EYES_ICON = c => '<svg viewBox="0 0 18 8" aria-hidden="true"><path d="M1 3 L7 5 L7 6.5 L1 4.6 Z M17 3 L11 5 L11 6.5 L17 4.6 Z" fill="' + c + '"/></svg>';
   function sleepFor(ts) {
     const m = Math.max(1, Math.floor((Date.now() - new Date(ts).getTime()) / 60000)), h = Math.floor(m / 60), d = Math.floor(h / 24);
@@ -1105,12 +1109,13 @@ document.addEventListener('touchmove', e => {
       list.map((k, i) => '<div class="rank"><span class="pos">' + (i + 1) + '</span><div class="who"><span>' + (k === ME ? 'Du' : esc(PLAYERS[k])) + ' · ' + GOD_LONG[k] + '</span><div class="mini"><i style="width:' + (stairsOf(k) / 7 * 100) + '%;background:' + CSSC[k] + '"></i></div><span class="d" style="font-size:11.5px;color:var(--muted)">' + tot[k] + ' Gläubige · ' + owned(k) + (owned(k) === 1 ? ' Dorf' : ' Dörfer') + '</span>' +
         (k === ME ? '' : '<span class="awake' + (pl(k).awake ? ' on' : '') + '">' + EYES_ICON(pl(k).awake ? CSSC[k] : '#5d6478') + (pl(k).awake ? 'wach' : 'schläft seit ' + sleepFor(pl(k).seen)) + '</span>') + '</div>' +
         '<div class="side"><span>Stufe ' + stairsOf(k) + '</span>' + (k === ME || ended() ? '' : '<button class="give" data-give="' + k + '">' + GIFT_ICON + 'Opfern</button>') + '</div></div>').join('') +
-      notifyRow() +
+      notifyRow() + recoveryRow() +
       (free ? '<div class="invite"><span>Spielcode <b>' + esc(game.code) + '</b><br>' + free + (free === 1 ? ' Gott ist' : ' Götter sind') + ' noch frei</span><button class="gold-btn" id="invite-btn">Einladen</button></div>' : '') +
       '<h3 class="sec">Chronik</h3>' + chronicle(game.events.slice(-15).reverse()) +
       '<button class="linkish" id="new-game">Spiel wechseln, erstellen oder beitreten</button><p class="build">' + BUILD + '</p>');
     const ib = document.getElementById('invite-btn'); if (ib) ib.addEventListener('click', invite);
     card.querySelectorAll('[data-give]').forEach(b => b.addEventListener('click', () => { sfx.tap(); openGive(b.dataset.give); }));
+    const rb = document.getElementById('rc-btn'); if (rb) rb.addEventListener('click', () => { sfx.tap(); keepRecovery(); });
     const pb = document.getElementById('push-btn'); if (pb) pb.addEventListener('click', () => { sfx.tap(); pb.disabled = true; (push.on() ? pushOff : pushOn)(); });
     document.getElementById('new-game').addEventListener('click', () => { closeSheet(); showLobby('create'); });
   }
@@ -1152,6 +1157,17 @@ document.addEventListener('touchmove', e => {
     base: () => location.origin + location.pathname
   };
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Rückkehr-Code: damit findet man seinen Gott auf einem neuen Gerät wieder (jede Home-Bildschirm-App hat eigenen Speicher)
+  const rcText = () => game.recovery ? game.recovery.slice(0, 3) + '-' + game.recovery.slice(3) : '…';
+  function recoveryRow() {
+    return '<div class="notify">' + KEY_ICON + '<span>Rückkehr-Code <b class="rc" id="rc-code">' + rcText() + '</b><small>Für ein neues iPhone oder die App neu auf dem Home-Bildschirm</small></span><button class="give" id="rc-btn">Merken</button></div>';
+  }
+  async function keepRecovery() {
+    if (!game.recovery) return;
+    const text = 'Götterwettstreit · Spiel ' + game.code + ' · ' + GOD_LONG[ME] + ' · Rückkehr-Code ' + rcText();
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text); toast('Rückkehr-Code kopiert.'); } catch (e) { toast('Rückkehr-Code: ' + rcText(), true); }
+  }
   function notifyRow() {
     let txt, btn = '';
     if (!push.can() || !push.app()) txt = 'Nur in der App vom Home-Bildschirm: Teilen, dann „Zum Home-Bildschirm“.';
@@ -1276,7 +1292,7 @@ document.addEventListener('touchmove', e => {
 
   // ---------- Spielstand (Supabase) ----------
   const SB_URL = 'https://txtduemylfrhpfklnntg.supabase.co', SB_KEY = 'sb_publishable_vn3LV4Kk2bm3vn-xkXbAgA_AumkhaaP';
-  const game = { code: null, token: null, events: [], lastEvent: 0, latest: null, pending: 0, live: null, started: false, seq: 0, applied: 0 };
+  const game = { code: null, token: null, recovery: null, events: [], lastEvent: 0, latest: null, pending: 0, live: null, started: false, seq: 0, applied: 0 };
   const VBYID = {}; VILLAGES.forEach(v => VBYID[v.id] = v);
   async function rpc(fn, args, keepalive) {
     let r;
@@ -1458,6 +1474,8 @@ document.addEventListener('touchmove', e => {
     else if (missed.length) openSheet('<div class="card-head"><div><h2 id="card-title">Seit deinem letzten Besuch</h2><p>Das haben die anderen Götter getan.</p></div><button class="x" id="card-close" aria-label="Schließen">' + ICON.close + '</button></div>' + chronicle(missed.reverse()));
     else setTimeout(() => toast('Tippe ein Dorf an, um ein Wunder zu wirken.'), 800);
     rpc('mark_seen', { p_token: token }).catch(() => {});
+    game.recovery = null;
+    rpc('my_recovery', { p_token: token }).then(c => { if (game.token !== token) return; game.recovery = c; const el = document.getElementById('rc-code'); if (el) el.textContent = rcText(); }).catch(() => {});
     pushJoin(token);
   }
   async function invite() {
@@ -1470,11 +1488,19 @@ document.addEventListener('touchmove', e => {
   const lobby = { el: document.getElementById('lobby'), mode: 'create', code: null, god: null, taken: {} };
   const lb = id => document.getElementById(id);
   function renderGods() {
-    lb('lobby-gods').innerHTML = GODS.map(k => '<button type="button" class="gpick" data-god="' + k + '" aria-pressed="' + (lobby.god === k) + '"' + (lobby.taken[k] ? ' disabled' : '') + '><i style="background:' + CSSC[k] + '"></i>' + GOD_LONG[k] + (lobby.taken[k] ? '<small>' + esc(lobby.taken[k]) + '</small>' : '') + '</button>').join('');
-    lb('lobby-gods').querySelectorAll('.gpick').forEach(b => b.addEventListener('click', () => { lobby.god = b.dataset.god; sfx.tap(); renderGods(); }));
+    lb('lobby-gods').innerHTML = GODS.map(k => '<button type="button" class="gpick" data-god="' + k + '" aria-pressed="' + (lobby.god === k) + '"' + ((lobby.taken[k] && lobby.mode !== 'join') ? ' disabled' : '') + '><i style="background:' + CSSC[k] + '"></i>' + GOD_LONG[k] + (lobby.taken[k] ? '<small>' + esc(lobby.taken[k]) + (lobby.mode === 'join' && lobby.god !== k ? ' · <span class="me">Das bin ich</span>' : '') + '</small>' : '') + '</button>').join('');
+    lb('lobby-gods').querySelectorAll('.gpick').forEach(b => b.addEventListener('click', () => { lobby.god = b.dataset.god; sfx.tap(); lb('lobby-err').textContent = ''; renderGods(); retMode(); }));
+  }
+  const isBack = () => lobby.mode === 'join' && !!lobby.taken[lobby.god];
+  function retMode() {
+    const back = isBack();
+    lb('lobby-name').parentElement.hidden = back; lb('lobby-rc').parentElement.hidden = !back;
+    if (back) lb('lobby-rc-label').textContent = 'Rückkehr-Code von ' + lobby.taken[lobby.god];
+    lb('lobby-go').textContent = back ? 'Zurückkehren' : lobby.mode === 'join' ? 'Beitreten' : 'Spiel erstellen';
+    lb('lobby-sub').textContent = lobby.mode === 'join' ? 'Spiel ' + lobby.code + (back ? ' · zurückkehren' : ' · wähle deinen Gott') : 'Ein neues Spiel für dich und deine Freunde';
   }
   async function showLobby(mode, code) {
-    lobby.mode = mode; lobby.code = code || null; lobby.taken = {}; lb('lobby-err').textContent = '';
+    lobby.mode = mode; lobby.code = code || null; lobby.taken = {}; lb('lobby-err').textContent = ''; lb('lobby-rc').value = '';
     lb('lobby-sub').textContent = mode === 'join' ? 'Spiel ' + code + ' · wähle deinen Gott' : 'Ein neues Spiel für dich und deine Freunde';
     lb('lobby-go').textContent = mode === 'join' ? 'Beitreten' : 'Spiel erstellen';
     lb('lobby-alt').hidden = mode === 'join'; lb('lobby-new').hidden = mode !== 'join';
@@ -1489,16 +1515,29 @@ document.addEventListener('touchmove', e => {
         const info = await rpc('game_lobby', { p_code: code });
         if (!info) { showLobby('create'); lb('lobby-err').textContent = 'Spiel ' + code + ' gibt es nicht.'; return; }
         info.players.forEach(p => lobby.taken[p.god] = p.name);
-        if (GODS.every(k => lobby.taken[k])) lb('lobby-err').textContent = 'Alle drei Götter sind schon vergeben.';
+        if (GODS.every(k => lobby.taken[k])) lb('lobby-err').textContent = 'Alle drei Götter sind vergeben. Tippe auf deinen, um zurückzukehren.';
       } catch (e) { lb('lobby-err').textContent = e.message; }
     }
     if (!lobby.god || lobby.taken[lobby.god]) lobby.god = GODS.find(k => !lobby.taken[k]) || null;
-    renderGods();
+    renderGods(); retMode();
   }
   // Bewusst kein <form>-Submit: eingebettete Vorschauen sperren Formulare oft stillschweigend.
   lb('lobby-name').addEventListener('keydown', e => { if (e.key === 'Enter') lb('lobby-go').click(); });
+  lb('lobby-rc').addEventListener('keydown', e => { if (e.key === 'Enter') lb('lobby-go').click(); });
   lb('lobby-go').addEventListener('click', async () => {
     ac();
+    if (isBack()) {
+      const rc = lb('lobby-rc').value.trim();
+      if (!rc) { lb('lobby-err').textContent = 'Gib den Rückkehr-Code ein.'; return; }
+      lb('lobby-go').disabled = true; lb('lobby-err').textContent = '';
+      try {
+        const r = await rpc('reclaim_player', { p_code: lobby.code, p_god: lobby.god, p_recovery: rc });
+        if (!r || r.error) { lb('lobby-err').textContent = (r && r.error) || 'Der Himmel schweigt.'; return; }
+        await startGame(r.code, r.token); sfx.fanfare();
+      } catch (err) { lb('lobby-err').textContent = err.message; }
+      finally { lb('lobby-go').disabled = false; }
+      return;
+    }
     const name = lb('lobby-name').value.trim();
     if (!name) { lb('lobby-err').textContent = 'Wie sollen dich die Sterblichen nennen?'; return; }
     if (!lobby.god) { lb('lobby-err').textContent = 'Wähle einen freien Gott.'; return; }
